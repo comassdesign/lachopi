@@ -1,7 +1,7 @@
 {
-  "name": "LaChopi",
-  "short_name": "LaChopi",
-  "description": "Tu lista de la compra personal",
+  "name": "merkavo",
+  "short_name": "merkavo",
+  "description": "Tu lista de la compra a un toque",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

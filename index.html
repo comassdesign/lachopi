@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-<title>LaChopi 🥑</title>
+<title>merkavo 🥑</title>
 <meta name="theme-color" content="#4ade80" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="LaChopi" />
+<meta name="apple-mobile-web-app-title" content="merkavo" />
 <link rel="manifest" href="manifest.json" />
 <link rel="icon" type="image/svg+xml" href="icon.svg" />
 <link rel="apple-touch-icon" href="icon-192.png" />
@@ -20,239 +20,281 @@
   @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.15) rotate(-3deg); } 100% { transform: scale(1); } }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes modalIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
   .pop { animation: pop 0.4s ease; }
   .fade-in { animation: fadeIn 0.3s ease; }
   .slide-up { animation: slideUp 0.4s ease; }
+  .modal-in { animation: modalIn 0.25s ease; }
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel" data-presets="env,react">
-const { useState, useEffect } = React;
+const { useState, useEffect, useMemo } = React;
 
-const CATEGORIES = {
-  frutas: { name: 'Frutas y verduras', emoji: '🥬', gradient: 'from-green-200 via-emerald-100 to-lime-100', gradientDark: 'from-emerald-600/25 via-green-600/20 to-lime-600/25',
-    subcategories: {
-      frutas: { name: 'Frutas', emoji: '🍎', items: [
-        {id:'manzana',name:'Manzanas',emoji:'🍎'},{id:'platano',name:'Plátanos',emoji:'🍌'},{id:'naranja',name:'Naranjas',emoji:'🍊'},{id:'mandarina',name:'Mandarinas',emoji:'🍊'},{id:'pera',name:'Peras',emoji:'🍐'},{id:'fresa',name:'Fresas',emoji:'🍓'},{id:'uva',name:'Uvas',emoji:'🍇'},{id:'limon',name:'Limones',emoji:'🍋'},{id:'kiwi',name:'Kiwis',emoji:'🥝'},{id:'sandia',name:'Sandía',emoji:'🍉'},{id:'melon',name:'Melón',emoji:'🍈'},{id:'piña',name:'Piña',emoji:'🍍'},{id:'mango',name:'Mango',emoji:'🥭'},{id:'melocoton',name:'Melocotón',emoji:'🍑'},{id:'cerezas',name:'Cerezas',emoji:'🍒'},{id:'arandanos',name:'Arándanos',emoji:'🫐'},{id:'frambuesa',name:'Frambuesas',emoji:'🍓'},{id:'coco',name:'Coco',emoji:'🥥'},{id:'aguacate',name:'Aguacate',emoji:'🥑'}
-      ]},
-      verduras: { name: 'Verduras', emoji: '🥬', items: [
-        {id:'tomate',name:'Tomates',emoji:'🍅'},{id:'lechuga',name:'Lechuga',emoji:'🥬'},{id:'rucula',name:'Rúcula',emoji:'🌱'},{id:'espinacas',name:'Espinacas',emoji:'🥬'},{id:'zanahoria',name:'Zanahorias',emoji:'🥕'},{id:'patata',name:'Patatas',emoji:'🥔'},{id:'boniato',name:'Boniato',emoji:'🍠'},{id:'cebolla',name:'Cebollas',emoji:'🧅'},{id:'puerro',name:'Puerro',emoji:'🌿'},{id:'ajo',name:'Ajos',emoji:'🧄'},{id:'pimiento',name:'Pimientos',emoji:'🫑'},{id:'pepino',name:'Pepino',emoji:'🥒'},{id:'calabacin',name:'Calabacín',emoji:'🥒'},{id:'berenjena',name:'Berenjena',emoji:'🍆'},{id:'calabaza',name:'Calabaza',emoji:'🎃'},{id:'brocoli',name:'Brócoli',emoji:'🥦'},{id:'coliflor',name:'Coliflor',emoji:'🥦'},{id:'maiz',name:'Maíz',emoji:'🌽'},{id:'guisantes',name:'Guisantes',emoji:'🫛'},{id:'judias-verdes',name:'Judías verdes',emoji:'🫘'},{id:'esparragos',name:'Espárragos',emoji:'🌿'},{id:'apio',name:'Apio',emoji:'🌿'},{id:'remolacha',name:'Remolacha',emoji:'🌰'},{id:'rabano',name:'Rábanos',emoji:'🫒'},{id:'champi',name:'Champiñones',emoji:'🍄'}
-      ]},
-      hierbas: { name: 'Hierbas', emoji: '🌿', items: [
-        {id:'jengibre',name:'Jengibre',emoji:'🫚'},{id:'perejil',name:'Perejil',emoji:'🌿'},{id:'cilantro',name:'Cilantro',emoji:'🌿'},{id:'menta',name:'Menta',emoji:'🌿'},{id:'albahaca',name:'Albahaca',emoji:'🌿'}
-      ]}
-    }
-  },
-  carnes: { name: 'Carnes y pescados', emoji: '🥩', gradient: 'from-rose-200 via-pink-100 to-red-100', gradientDark: 'from-rose-600/25 via-pink-600/20 to-red-600/25',
-    subcategories: {
-      aves: { name: 'Aves', emoji: '🍗', items: [
-        {id:'pollo',name:'Pollo entero',emoji:'🍗'},{id:'pechuga-pollo',name:'Pechuga pollo',emoji:'🍗'},{id:'muslos-pollo',name:'Muslos pollo',emoji:'🍗'},{id:'alitas',name:'Alitas',emoji:'🍗'},{id:'pavo',name:'Pavo',emoji:'🦃'},{id:'pechuga-pavo',name:'Pechuga pavo',emoji:'🥩'}
-      ]},
-      carnes_rojas: { name: 'Carnes rojas', emoji: '🥩', items: [
-        {id:'ternera',name:'Ternera',emoji:'🥩'},{id:'filetes',name:'Filetes',emoji:'🥩'},{id:'carne-picada',name:'Carne picada',emoji:'🥩'},{id:'cerdo',name:'Cerdo',emoji:'🐖'},{id:'lomo',name:'Lomo',emoji:'🥩'},{id:'costillas',name:'Costillas',emoji:'🍖'},{id:'cordero',name:'Cordero',emoji:'🐑'},{id:'conejo',name:'Conejo',emoji:'🐰'}
-      ]},
-      embutidos: { name: 'Embutidos', emoji: '🌭', items: [
-        {id:'jamon',name:'Jamón serrano',emoji:'🍖'},{id:'jamon-cocido',name:'Jamón cocido',emoji:'🥓'},{id:'bacon',name:'Bacon',emoji:'🥓'},{id:'chorizo',name:'Chorizo',emoji:'🌭'},{id:'salchichon',name:'Salchichón',emoji:'🥓'},{id:'salchichas',name:'Salchichas',emoji:'🌭'},{id:'hamburguesa',name:'Hamburguesas',emoji:'🍔'},{id:'albondigas',name:'Albóndigas',emoji:'🍱'}
-      ]},
-      pescados: { name: 'Pescados', emoji: '🐟', items: [
-        {id:'salmon',name:'Salmón',emoji:'🐟'},{id:'merluza',name:'Merluza',emoji:'🐟'},{id:'bacalao',name:'Bacalao',emoji:'🐟'},{id:'dorada',name:'Dorada',emoji:'🐟'},{id:'lubina',name:'Lubina',emoji:'🐟'},{id:'atun',name:'Atún fresco',emoji:'🐠'},{id:'sardinas',name:'Sardinas',emoji:'🐟'},{id:'boquerones',name:'Boquerones',emoji:'🐟'}
-      ]},
-      mariscos: { name: 'Mariscos', emoji: '🦐', items: [
-        {id:'gambas',name:'Gambas',emoji:'🦐'},{id:'langostinos',name:'Langostinos',emoji:'🦐'},{id:'calamares',name:'Calamares',emoji:'🦑'},{id:'pulpo',name:'Pulpo',emoji:'🐙'},{id:'mejillones',name:'Mejillones',emoji:'🦪'},{id:'almejas',name:'Almejas',emoji:'🐚'},{id:'berberechos',name:'Berberechos',emoji:'🐚'}
-      ]}
-    }
-  },
-  lacteos: { name: 'Lácteos y huevos', emoji: '🥛', gradient: 'from-blue-100 via-sky-100 to-cyan-100', gradientDark: 'from-blue-600/25 via-sky-600/20 to-cyan-600/25',
-    subcategories: {
-      leches: { name: 'Leches', emoji: '🥛', items: [
-        {id:'leche',name:'Leche entera',emoji:'🥛'},{id:'leche-desnatada',name:'Leche desnatada',emoji:'🥛'},{id:'leche-semi',name:'Leche semi',emoji:'🥛'},{id:'leche-vegetal',name:'Leche vegetal',emoji:'🥛'},{id:'leche-condensada',name:'Leche condensada',emoji:'🥛'}
-      ]},
-      quesos: { name: 'Quesos', emoji: '🧀', items: [
-        {id:'queso',name:'Queso curado',emoji:'🧀'},{id:'queso-fresco',name:'Queso fresco',emoji:'🧀'},{id:'queso-rallado',name:'Queso rallado',emoji:'🧀'},{id:'mozzarella',name:'Mozzarella',emoji:'🧀'},{id:'queso-cabra',name:'Queso de cabra',emoji:'🧀'},{id:'quesitos',name:'Quesitos',emoji:'🧀'},{id:'parmesano',name:'Parmesano',emoji:'🧀'},{id:'gouda',name:'Gouda',emoji:'🧀'},{id:'cheddar',name:'Cheddar',emoji:'🧀'},{id:'feta',name:'Feta',emoji:'🧀'},{id:'brie',name:'Brie',emoji:'🧀'}
-      ]},
-      yogures: { name: 'Yogures', emoji: '🍦', items: [
-        {id:'yogur',name:'Yogur natural',emoji:'🍦'},{id:'yogur-sabores',name:'Yogur sabores',emoji:'🍦'},{id:'yogur-griego',name:'Yogur griego',emoji:'🥣'},{id:'kefir',name:'Kéfir',emoji:'🥛'},{id:'requeson',name:'Requesón',emoji:'🧀'},{id:'cuajada',name:'Cuajada',emoji:'🥣'}
-      ]},
-      mantequillas: { name: 'Mantequillas', emoji: '🧈', items: [
-        {id:'mantequilla',name:'Mantequilla',emoji:'🧈'},{id:'margarina',name:'Margarina',emoji:'🧈'},{id:'nata',name:'Nata',emoji:'🍶'},{id:'nata-montar',name:'Nata para montar',emoji:'🍶'}
-      ]},
-      otros: { name: 'Otros', emoji: '🥚', items: [
-        {id:'huevos',name:'Huevos',emoji:'🥚'},{id:'batido',name:'Batidos',emoji:'🥤'}
-      ]}
-    }
-  },
-  panaderia: { name: 'Panadería y cereales', emoji: '🍞', gradient: 'from-amber-100 via-yellow-100 to-orange-100', gradientDark: 'from-amber-600/25 via-yellow-600/20 to-orange-600/25',
-    subcategories: {
-      panes: { name: 'Panes', emoji: '🍞', items: [
-        {id:'pan',name:'Pan',emoji:'🍞'},{id:'pan-integral',name:'Pan integral',emoji:'🍞'},{id:'pan-molde',name:'Pan de molde',emoji:'🍞'},{id:'baguette',name:'Baguette',emoji:'🥖'},{id:'panecillos',name:'Panecillos',emoji:'🥖'},{id:'pan-burger',name:'Pan hamburguesa',emoji:'🍔'},{id:'pan-perrito',name:'Pan perrito',emoji:'🌭'},{id:'tostadas',name:'Tostadas',emoji:'🍞'},{id:'biscotes',name:'Biscotes',emoji:'🍞'},{id:'picos',name:'Picos',emoji:'🥖'}
-      ]},
-      bolleria: { name: 'Bollería', emoji: '🥐', items: [
-        {id:'croissant',name:'Croissants',emoji:'🥐'},{id:'magdalenas',name:'Magdalenas',emoji:'🧁'},{id:'bizcocho',name:'Bizcocho',emoji:'🍰'},{id:'palmeras',name:'Palmeras',emoji:'🥐'},{id:'ensaimada',name:'Ensaimadas',emoji:'🥐'},{id:'napolitanas',name:'Napolitanas',emoji:'🥐'}
-      ]},
-      cereales: { name: 'Cereales', emoji: '🥣', items: [
-        {id:'cereales',name:'Cereales',emoji:'🥣'},{id:'muesli',name:'Muesli',emoji:'🥣'},{id:'granola',name:'Granola',emoji:'🥣'},{id:'avena',name:'Avena',emoji:'🌾'},{id:'cornflakes',name:'Cornflakes',emoji:'🌽'}
-      ]}
-    }
-  },
-  despensa: { name: 'Despensa', emoji: '🥫', gradient: 'from-orange-100 via-amber-100 to-yellow-100', gradientDark: 'from-orange-600/25 via-amber-600/20 to-yellow-600/25',
-    subcategories: {
-      pasta_arroz: { name: 'Pasta y arroz', emoji: '🍝', items: [
-        {id:'pasta',name:'Pasta',emoji:'🍝'},{id:'macarrones',name:'Macarrones',emoji:'🍝'},{id:'espaguetis',name:'Espaguetis',emoji:'🍝'},{id:'lasaña',name:'Placas lasaña',emoji:'🍝'},{id:'arroz',name:'Arroz',emoji:'🍚'},{id:'arroz-integral',name:'Arroz integral',emoji:'🍚'},{id:'quinoa',name:'Quinoa',emoji:'🌾'},{id:'cous-cous',name:'Cous cous',emoji:'🌾'},{id:'fideos',name:'Fideos',emoji:'🍜'}
-      ]},
-      aceites: { name: 'Aceites', emoji: '🫒', items: [
-        {id:'aceite',name:'Aceite oliva',emoji:'🫒'},{id:'aceite-girasol',name:'Aceite girasol',emoji:'🌻'},{id:'aceite-coco',name:'Aceite coco',emoji:'🥥'},{id:'vinagre',name:'Vinagre',emoji:'🍶'},{id:'vinagre-modena',name:'Vinagre Módena',emoji:'🍶'}
-      ]},
-      especias: { name: 'Especias', emoji: '🧂', items: [
-        {id:'sal',name:'Sal',emoji:'🧂'},{id:'pimienta',name:'Pimienta',emoji:'🧂'},{id:'oregano',name:'Orégano',emoji:'🌿'},{id:'pimenton',name:'Pimentón',emoji:'🌶️'},{id:'comino',name:'Comino',emoji:'🌿'},{id:'curry',name:'Curry',emoji:'🌶️'},{id:'azafran',name:'Azafrán',emoji:'🌼'},{id:'caldo',name:'Cubitos caldo',emoji:'🍲'}
-      ]},
-      reposteria: { name: 'Repostería', emoji: '🍰', items: [
-        {id:'azucar',name:'Azúcar',emoji:'🍬'},{id:'azucar-moreno',name:'Azúcar moreno',emoji:'🍬'},{id:'edulcorante',name:'Edulcorante',emoji:'🍬'},{id:'harina',name:'Harina',emoji:'🌾'},{id:'levadura',name:'Levadura',emoji:'🥖'},{id:'gelatina',name:'Gelatina',emoji:'🍮'},{id:'chocolate-postre',name:'Choco postre',emoji:'🍫'}
-      ]},
-      salsas: { name: 'Salsas', emoji: '🥫', items: [
-        {id:'tomate-frito',name:'Tomate frito',emoji:'🥫'},{id:'tomate-triturado',name:'Tomate triturado',emoji:'🥫'},{id:'salsa-soja',name:'Salsa de soja',emoji:'🍶'},{id:'ketchup',name:'Ketchup',emoji:'🍅'},{id:'mayonesa',name:'Mayonesa',emoji:'🥚'},{id:'mostaza',name:'Mostaza',emoji:'🌭'},{id:'pesto',name:'Pesto',emoji:'🌿'},{id:'salsa-barbacoa',name:'Salsa barbacoa',emoji:'🍖'}
-      ]},
-      conservas: { name: 'Conservas', emoji: '🥫', items: [
-        {id:'atun-lata',name:'Atún en lata',emoji:'🥫'},{id:'sardinas-lata',name:'Sardinas lata',emoji:'🥫'},{id:'mejillones-lata',name:'Mejillones lata',emoji:'🥫'},{id:'aceitunas',name:'Aceitunas',emoji:'🫒'},{id:'pepinillos',name:'Pepinillos',emoji:'🥒'},{id:'maiz-lata',name:'Maíz en lata',emoji:'🌽'},{id:'esparragos-lata',name:'Espárragos lata',emoji:'🌿'},{id:'pina-lata',name:'Piña en lata',emoji:'🍍'}
-      ]},
-      legumbres: { name: 'Legumbres', emoji: '🫘', items: [
-        {id:'garbanzos',name:'Garbanzos',emoji:'🫘'},{id:'lentejas',name:'Lentejas',emoji:'🫘'},{id:'alubias',name:'Alubias',emoji:'🫘'},{id:'judias',name:'Judías',emoji:'🫘'},{id:'soja',name:'Soja',emoji:'🫘'}
-      ]},
-      cafe_te: { name: 'Café e infusiones', emoji: '☕', items: [
-        {id:'cafe',name:'Café molido',emoji:'☕'},{id:'cafe-grano',name:'Café en grano',emoji:'☕'},{id:'cafe-soluble',name:'Café soluble',emoji:'☕'},{id:'capsulas',name:'Cápsulas',emoji:'☕'},{id:'te',name:'Té',emoji:'🍵'},{id:'infusiones',name:'Infusiones',emoji:'🍵'},{id:'manzanilla',name:'Manzanilla',emoji:'🌼'},{id:'colacao',name:'Cacao soluble',emoji:'🥤'}
-      ]},
-      untables: { name: 'Untables', emoji: '🍯', items: [
-        {id:'mermelada',name:'Mermelada',emoji:'🍯'},{id:'miel',name:'Miel',emoji:'🍯'},{id:'crema-cacao',name:'Crema de cacao',emoji:'🍫'},{id:'crema-cacahuete',name:'Crema cacahuete',emoji:'🥜'}
-      ]}
-    }
-  },
-  congelados: { name: 'Congelados', emoji: '❄️', gradient: 'from-cyan-100 via-blue-100 to-indigo-100', gradientDark: 'from-cyan-500/25 via-blue-500/20 to-indigo-500/25',
-    subcategories: {
-      precocinados: { name: 'Pre-cocinados', emoji: '🍕', items: [
-        {id:'pizza',name:'Pizza',emoji:'🍕'},{id:'lasaña-cong',name:'Lasaña',emoji:'🍱'},{id:'croquetas',name:'Croquetas',emoji:'🥟'},{id:'empanadillas',name:'Empanadillas',emoji:'🥟'},{id:'nuggets',name:'Nuggets',emoji:'🍗'},{id:'varitas',name:'Varitas pescado',emoji:'🐟'},{id:'pollo-empanado',name:'Pollo empanado',emoji:'🍗'}
-      ]},
-      helados: { name: 'Helados', emoji: '🍨', items: [
-        {id:'helado',name:'Helado tarrina',emoji:'🍨'},{id:'polos',name:'Polos',emoji:'🍦'},{id:'cucuruchos',name:'Cucuruchos',emoji:'🍦'},{id:'hielo',name:'Hielo',emoji:'🧊'}
-      ]},
-      verduras_pescado: { name: 'Verduras y pescado', emoji: '🥦', items: [
-        {id:'verdura-cong',name:'Verduras congeladas',emoji:'🥦'},{id:'menestra',name:'Menestra',emoji:'🥕'},{id:'guisantes-cong',name:'Guisantes',emoji:'🫛'},{id:'pescado-cong',name:'Pescado congelado',emoji:'🐟'},{id:'marisco-cong',name:'Marisco congelado',emoji:'🦐'},{id:'patatas-cong',name:'Patatas fritas',emoji:'🍟'}
-      ]}
-    }
-  },
-  aseo: { name: 'Aseo personal', emoji: '🧴', gradient: 'from-purple-100 via-violet-100 to-fuchsia-100', gradientDark: 'from-purple-500/25 via-violet-500/20 to-fuchsia-500/25',
-    subcategories: {
-      cabello: { name: 'Cabello', emoji: '💇', items: [
-        {id:'champu',name:'Champú',emoji:'🧴'},{id:'acondicionador',name:'Acondicionador',emoji:'🧴'},{id:'mascarilla-pelo',name:'Mascarilla pelo',emoji:'🧴'},{id:'tinte',name:'Tinte',emoji:'🎨'},{id:'peine',name:'Peine',emoji:'💇'}
-      ]},
-      higiene: { name: 'Higiene', emoji: '🧼', items: [
-        {id:'gel',name:'Gel de ducha',emoji:'🧼'},{id:'jabon-manos',name:'Jabón de manos',emoji:'🧼'},{id:'esponja',name:'Esponja',emoji:'🧽'},{id:'desodorante',name:'Desodorante',emoji:'🧴'}
-      ]},
-      bucal: { name: 'Bucal', emoji: '🪥', items: [
-        {id:'pasta-dientes',name:'Pasta de dientes',emoji:'🪥'},{id:'cepillo',name:'Cepillo dientes',emoji:'🪥'},{id:'enjuague',name:'Enjuague bucal',emoji:'🧴'},{id:'hilo-dental',name:'Hilo dental',emoji:'🦷'}
-      ]},
-      cuidado: { name: 'Cuidado piel', emoji: '🧴', items: [
-        {id:'crema-corporal',name:'Crema corporal',emoji:'🧴'},{id:'crema-facial',name:'Crema facial',emoji:'🧴'},{id:'crema-manos',name:'Crema de manos',emoji:'🧴'},{id:'protector-solar',name:'Protector solar',emoji:'☀️'},{id:'aftersun',name:'Aftersun',emoji:'🌞'},{id:'discos-desmaq',name:'Discos desmaq.',emoji:'⚪'},{id:'algodon',name:'Algodón',emoji:'☁️'}
-      ]},
-      perfumes: { name: 'Perfumes', emoji: '💐', items: [
-        {id:'colonia',name:'Colonia',emoji:'💐'},{id:'perfume',name:'Perfume',emoji:'💐'}
-      ]},
-      afeitado: { name: 'Afeitado', emoji: '🪒', items: [
-        {id:'maquinilla',name:'Maquinilla',emoji:'🪒'},{id:'cuchillas',name:'Cuchillas',emoji:'🪒'},{id:'espuma-afeitar',name:'Espuma afeitar',emoji:'🧴'},{id:'aftershave',name:'Aftershave',emoji:'🧴'}
-      ]},
-      higiene_intima: { name: 'Higiene íntima', emoji: '🩸', items: [
-        {id:'papel-higienico',name:'Papel higiénico',emoji:'🧻'},{id:'compresas',name:'Compresas',emoji:'🩸'},{id:'tampones',name:'Tampones',emoji:'🩸'},{id:'salvaslips',name:'Salvaslips',emoji:'🩸'}
-      ]},
-      bebes: { name: 'Bebés', emoji: '👶', items: [
-        {id:'panales',name:'Pañales',emoji:'👶'},{id:'toallitas-bebe',name:'Toallitas bebé',emoji:'🧻'},{id:'leche-bebe',name:'Leche bebé',emoji:'🍼'},{id:'potitos',name:'Potitos',emoji:'🍼'}
-      ]},
-      otros_aseo: { name: 'Otros', emoji: '🩹', items: [
-        {id:'bastoncillos',name:'Bastoncillos',emoji:'🦻'},{id:'tiritas',name:'Tiritas',emoji:'🩹'},{id:'cortaúñas',name:'Cortaúñas',emoji:'✂️'},{id:'pinzas',name:'Pinzas',emoji:'🤏'}
-      ]}
-    }
-  },
-  limpieza: { name: 'Limpieza del hogar', emoji: '🧺', gradient: 'from-teal-100 via-emerald-100 to-green-100', gradientDark: 'from-teal-500/25 via-emerald-500/20 to-green-500/25',
-    subcategories: {
-      lavadora: { name: 'Lavadora', emoji: '🧺', items: [
-        {id:'detergente',name:'Detergente',emoji:'🧺'},{id:'suavizante',name:'Suavizante',emoji:'🌸'},{id:'quitamanchas',name:'Quitamanchas',emoji:'🧴'},{id:'lejia-color',name:'Lejía color',emoji:'🧴'}
-      ]},
-      lavavajillas: { name: 'Lavavajillas', emoji: '🧽', items: [
-        {id:'lavavajillas',name:'Lavavajillas mano',emoji:'🧽'},{id:'pastillas-lavavajillas',name:'Pastillas',emoji:'🧊'},{id:'abrillantador',name:'Abrillantador',emoji:'✨'},{id:'sal-lavavajillas',name:'Sal lavavajillas',emoji:'🧂'}
-      ]},
-      limpieza_fuerte: { name: 'Limpieza fuerte', emoji: '🧴', items: [
-        {id:'lejia',name:'Lejía',emoji:'🧴'},{id:'amoniaco',name:'Amoniaco',emoji:'🧴'},{id:'desengrasante',name:'Desengrasante',emoji:'🧴'},{id:'wc',name:'Limpiador WC',emoji:'🚽'},{id:'desatascador',name:'Desatascador',emoji:'🚰'}
-      ]},
-      superficies: { name: 'Superficies', emoji: '🪟', items: [
-        {id:'limpiacristales',name:'Limpiacristales',emoji:'🪟'},{id:'friegasuelos',name:'Friegasuelos',emoji:'🧹'},{id:'limpiamuebles',name:'Limpiamuebles',emoji:'🪑'},{id:'antical',name:'Antical',emoji:'🚿'}
-      ]},
-      utensilios: { name: 'Utensilios', emoji: '🧹', items: [
-        {id:'bayeta',name:'Bayetas',emoji:'🧻'},{id:'estropajo',name:'Estropajos',emoji:'🧽'},{id:'fregona',name:'Fregona',emoji:'🧹'},{id:'escoba',name:'Escoba',emoji:'🧹'},{id:'recogedor',name:'Recogedor',emoji:'🧹'},{id:'guantes',name:'Guantes',emoji:'🧤'}
-      ]},
-      papel: { name: 'Papel y bolsas', emoji: '🧻', items: [
-        {id:'bolsas',name:'Bolsas basura',emoji:'🗑️'},{id:'papel-cocina',name:'Papel cocina',emoji:'🧻'},{id:'servilletas',name:'Servilletas',emoji:'🧻'},{id:'toallitas',name:'Toallitas',emoji:'🧻'},{id:'aluminio',name:'Papel aluminio',emoji:'✨'},{id:'film',name:'Papel film',emoji:'📜'},{id:'horno-papel',name:'Papel de horno',emoji:'📜'},{id:'bolsas-zip',name:'Bolsas zip',emoji:'📦'}
-      ]},
-      hogar: { name: 'Hogar', emoji: '🕯️', items: [
-        {id:'ambientador',name:'Ambientador',emoji:'🌸'},{id:'insecticida',name:'Insecticida',emoji:'🦟'},{id:'velas',name:'Velas',emoji:'🕯️'},{id:'pilas',name:'Pilas',emoji:'🔋'},{id:'bombillas',name:'Bombillas',emoji:'💡'},{id:'cerillas',name:'Cerillas',emoji:'🔥'}
-      ]}
-    }
-  },
-  bebidas: { name: 'Bebidas', emoji: '🍷', gradient: 'from-pink-100 via-rose-100 to-red-100', gradientDark: 'from-pink-500/25 via-rose-500/20 to-red-500/25',
-    subcategories: {
-      aguas: { name: 'Aguas', emoji: '💧', items: [
-        {id:'agua',name:'Agua',emoji:'💧'},{id:'agua-gas',name:'Agua con gas',emoji:'💧'},{id:'agua-saborizada',name:'Agua sabores',emoji:'🍋'}
-      ]},
-      refrescos: { name: 'Refrescos', emoji: '🥤', items: [
-        {id:'cocacola',name:'Cola',emoji:'🥤'},{id:'cocacola-zero',name:'Cola zero',emoji:'🥤'},{id:'naranjada',name:'Naranjada',emoji:'🍊'},{id:'limonada',name:'Limonada',emoji:'🍋'},{id:'tonica',name:'Tónica',emoji:'🥤'},{id:'energetica',name:'Energética',emoji:'⚡'},{id:'isotonica',name:'Isotónica',emoji:'🥤'}
-      ]},
-      zumos: { name: 'Zumos', emoji: '🧃', items: [
-        {id:'zumo',name:'Zumo naranja',emoji:'🧃'},{id:'zumo-piña',name:'Zumo piña',emoji:'🧃'},{id:'zumo-multifruta',name:'Multifruta',emoji:'🧃'},{id:'zumo-melocoton',name:'Zumo melocotón',emoji:'🧃'},{id:'horchata',name:'Horchata',emoji:'🥛'}
-      ]},
-      cervezas: { name: 'Cervezas', emoji: '🍺', items: [
-        {id:'cerveza',name:'Cerveza',emoji:'🍺'},{id:'cerveza-sin',name:'Cerveza sin',emoji:'🍺'},{id:'cerveza-tostada',name:'Cerveza tostada',emoji:'🍺'},{id:'sidra',name:'Sidra',emoji:'🍾'}
-      ]},
-      vinos: { name: 'Vinos', emoji: '🍷', items: [
-        {id:'vino-tinto',name:'Vino tinto',emoji:'🍷'},{id:'vino-blanco',name:'Vino blanco',emoji:'🥂'},{id:'vino-rosado',name:'Vino rosado',emoji:'🍷'},{id:'cava',name:'Cava',emoji:'🍾'},{id:'champagne',name:'Champagne',emoji:'🍾'}
-      ]},
-      licores: { name: 'Licores', emoji: '🥃', items: [
-        {id:'vermut',name:'Vermut',emoji:'🍸'},{id:'ginebra',name:'Ginebra',emoji:'🍸'},{id:'ron',name:'Ron',emoji:'🥃'},{id:'whisky',name:'Whisky',emoji:'🥃'},{id:'vodka',name:'Vodka',emoji:'🍸'},{id:'tequila',name:'Tequila',emoji:'🥃'}
-      ]}
-    }
-  },
-  snacks: { name: 'Snacks y dulces', emoji: '🍪', gradient: 'from-yellow-100 via-amber-100 to-orange-100', gradientDark: 'from-yellow-500/25 via-amber-500/20 to-orange-500/25',
-    subcategories: {
-      chocolate: { name: 'Chocolate', emoji: '🍫', items: [
-        {id:'chocolate',name:'Tableta chocolate',emoji:'🍫'},{id:'chocolatina',name:'Chocolatinas',emoji:'🍫'},{id:'bombones',name:'Bombones',emoji:'🍬'},{id:'turron',name:'Turrón',emoji:'🍯'},{id:'kinder',name:'Huevo Kinder',emoji:'🥚'}
-      ]},
-      galletas: { name: 'Galletas', emoji: '🍪', items: [
-        {id:'galletas',name:'Galletas',emoji:'🍪'},{id:'maria',name:'Galletas María',emoji:'🍪'},{id:'oreo',name:'Galletas choco',emoji:'🍪'},{id:'digestive',name:'Digestive',emoji:'🍪'},{id:'principe',name:'Príncipe',emoji:'🍪'}
-      ]},
-      bolleria_dulce: { name: 'Bollería dulce', emoji: '🍩', items: [
-        {id:'donuts',name:'Donuts',emoji:'🍩'},{id:'barritas',name:'Barritas',emoji:'🍫'},{id:'brownie',name:'Brownies',emoji:'🍫'},{id:'tarta',name:'Tartas',emoji:'🍰'}
-      ]},
-      salados: { name: 'Salados', emoji: '🍿', items: [
-        {id:'patatas',name:'Patatas fritas',emoji:'🥔'},{id:'gusanitos',name:'Gusanitos',emoji:'🌽'},{id:'doritos',name:'Nachos',emoji:'🌽'},{id:'palomitas',name:'Palomitas',emoji:'🍿'},{id:'pretzels',name:'Pretzels',emoji:'🥨'},{id:'kikos',name:'Kikos',emoji:'🌽'},{id:'pan-tomate',name:'Picos',emoji:'🥖'}
-      ]},
-      frutos_secos: { name: 'Frutos secos', emoji: '🥜', items: [
-        {id:'frutos-secos',name:'Mix frutos secos',emoji:'🥜'},{id:'almendras',name:'Almendras',emoji:'🌰'},{id:'pipas',name:'Pipas',emoji:'🌻'},{id:'cacahuetes',name:'Cacahuetes',emoji:'🥜'},{id:'nueces',name:'Nueces',emoji:'🌰'},{id:'pasas',name:'Pasas',emoji:'🍇'}
-      ]},
-      caramelos: { name: 'Caramelos', emoji: '🍬', items: [
-        {id:'caramelos',name:'Caramelos',emoji:'🍬'},{id:'gominolas',name:'Gominolas',emoji:'🐻'},{id:'chicles',name:'Chicles',emoji:'🍬'},{id:'regaliz',name:'Regaliz',emoji:'🍭'},{id:'piruletas',name:'Piruletas',emoji:'🍭'}
-      ]}
-    }
-  }
-};
-
-// Storage seguro: usa localStorage si está disponible, si no usa memoria
+// ========== STORAGE ==========
 const memStore = {};
 const safeStorage = {
-  get(key) {
-    try { return localStorage.getItem(key); } catch { return memStore[key] || null; }
-  },
-  set(key, value) {
-    try { localStorage.setItem(key, value); } catch { memStore[key] = value; }
-  }
+  get(key) { try { return localStorage.getItem(key); } catch { return memStore[key] || null; } },
+  set(key, value) { try { localStorage.setItem(key, value); } catch { memStore[key] = value; } }
 };
 
-// Iconos SVG
+// ========== IDIOMAS ==========
+const LANGS = [
+  { code: 'es', name: 'Español', flag: '🇪🇸' },
+  { code: 'en', name: 'English', flag: '🇬🇧' },
+  { code: 'fr', name: 'Français', flag: '🇫🇷' },
+  { code: 'it', name: 'Italiano', flag: '🇮🇹' },
+  { code: 'pt', name: 'Português', flag: '🇵🇹' },
+];
+const T = (es, en, fr, it, pt) => ({ es, en, fr, it, pt });
+const P = (id, emoji, es, en, fr, it, pt) => ({ id, emoji, name: T(es, en, fr, it, pt) });
+
+const UI = {
+  catalog: T('Catálogo', 'Catalog', 'Catalogue', 'Catalogo', 'Catálogo'),
+  list: T('Lista', 'List', 'Liste', 'Lista', 'Lista'),
+  settings: T('Ajustes', 'Settings', 'Réglages', 'Impostazioni', 'Definições'),
+  searchPlaceholder: T('Buscar productos...', 'Search products...', 'Rechercher...', 'Cerca prodotti...', 'Pesquisar...'),
+  noResults: T('Sin resultados', 'No results', 'Aucun résultat', 'Nessun risultato', 'Sem resultados'),
+  emptyList: T('Tu lista está vacía', 'Your list is empty', 'Votre liste est vide', 'La tua lista è vuota', 'A tua lista está vazia'),
+  emptyHint: T('Añade productos desde el catálogo', 'Add products from the catalog', 'Ajoutez depuis le catalogue', 'Aggiungi dal catalogo', 'Adiciona do catálogo'),
+  startAdding: T('Empezar a añadir', 'Start adding', 'Commencer', 'Inizia', 'Começar'),
+  toBuy: T('por comprar', 'to buy', 'à acheter', 'da comprare', 'para comprar'),
+  inCart: T('en el carro', 'in cart', 'dans le panier', 'nel carrello', 'no carrinho'),
+  clearList: T('Vaciar lista', 'Clear list', 'Vider', 'Svuota lista', 'Esvaziar lista'),
+  viewList: T('Ver lista', 'View list', 'Voir la liste', 'Vedi lista', 'Ver lista'),
+  appearance: T('Apariencia', 'Appearance', 'Apparence', 'Aspetto', 'Aparência'),
+  language: T('Idioma', 'Language', 'Langue', 'Lingua', 'Idioma'),
+  darkMode: T('Modo oscuro', 'Dark mode', 'Mode sombre', 'Modalità scura', 'Modo escuro'),
+  lightMode: T('Modo claro', 'Light mode', 'Mode clair', 'Modalità chiara', 'Modo claro'),
+  myProducts: T('Mis productos', 'My products', 'Mes produits', 'I miei prodotti', 'Meus produtos'),
+  addProduct: T('Añadir producto', 'Add product', 'Ajouter un produit', 'Aggiungi prodotto', 'Adicionar produto'),
+  productName: T('Nombre del producto', 'Product name', 'Nom du produit', 'Nome del prodotto', 'Nome do produto'),
+  chooseEmoji: T('Elige un emoji', 'Choose an emoji', 'Choisis un emoji', 'Scegli un emoji', 'Escolhe um emoji'),
+  customEmoji: T('O escribe otro:', 'Or type another:', 'Ou tape un autre :', 'O scrivi altro:', 'Ou escreve outro:'),
+  cancel: T('Cancelar', 'Cancel', 'Annuler', 'Annulla', 'Cancelar'),
+  save: T('Guardar', 'Save', 'Enregistrer', 'Salva', 'Guardar'),
+  noCustom: T('Aún no has añadido productos personalizados', 'No custom products yet', 'Aucun produit personnalisé', 'Nessun prodotto personalizzato', 'Sem produtos personalizados ainda'),
+  createFirst: T('Crea el primero pulsando el botón +', 'Create your first with the + button', 'Créez le premier avec le +', 'Crea il primo con il +', 'Cria o primeiro com o botão +'),
+  tagline: T('Tu lista a un toque', 'Your list, one tap away', 'Votre liste en un clic', 'La tua lista al tocco', 'A tua lista num toque'),
+  createdBy: T('Creado por', 'Created by', 'Créé par', 'Creato da', 'Criado por'),
+};
+
+const SUGGESTED_EMOJIS = ['🍎','🍌','🥑','🥕','🍅','🥔','🥒','🥦','🌽','🍞','🥐','🍰','🥩','🍗','🐟','🦐','🥛','🧀','🥚','🍯','🍫','🍪','🍿','🥜','🥤','🍷','🍺','☕','💧','🧃','🧴','🧼','🪥','🧻','🧺','🧹','🧽','💡','🔋','🕯️','⭐','❤️','📦','🛒','✨'];
+
+// ========== CATÁLOGO ==========
+const CATEGORIES = {
+  frutas: { name: T('Frutas y verduras','Fruits & veggies','Fruits & légumes','Frutta e verdura','Frutas e legumes'), emoji: '🥬', gradient: 'from-green-200 via-emerald-100 to-lime-100', gradientDark: 'from-emerald-600/25 via-green-600/20 to-lime-600/25',
+    subcategories: {
+      frutas: { name: T('Frutas','Fruits','Fruits','Frutta','Frutas'), emoji: '🍎', items: [
+        P('manzana','🍎','Manzanas','Apples','Pommes','Mele','Maçãs'),P('platano','🍌','Plátanos','Bananas','Bananes','Banane','Bananas'),P('naranja','🍊','Naranjas','Oranges','Oranges','Arance','Laranjas'),P('mandarina','🍊','Mandarinas','Tangerines','Mandarines','Mandarini','Tangerinas'),P('pera','🍐','Peras','Pears','Poires','Pere','Pêras'),P('fresa','🍓','Fresas','Strawberries','Fraises','Fragole','Morangos'),P('uva','🍇','Uvas','Grapes','Raisins','Uva','Uvas'),P('limon','🍋','Limones','Lemons','Citrons','Limoni','Limões'),P('kiwi','🥝','Kiwis','Kiwis','Kiwis','Kiwi','Kiwis'),P('sandia','🍉','Sandía','Watermelon','Pastèque','Anguria','Melancia'),P('melon','🍈','Melón','Melon','Melon','Melone','Melão'),P('pina','🍍','Piña','Pineapple','Ananas','Ananas','Ananás'),P('mango','🥭','Mango','Mango','Mangue','Mango','Manga'),P('melocoton','🍑','Melocotón','Peach','Pêche','Pesca','Pêssego'),P('cerezas','🍒','Cerezas','Cherries','Cerises','Ciliegie','Cerejas'),P('arandanos','🫐','Arándanos','Blueberries','Myrtilles','Mirtilli','Mirtilos'),P('frambuesa','🍓','Frambuesas','Raspberries','Framboises','Lamponi','Framboesas'),P('coco','🥥','Coco','Coconut','Noix de coco','Cocco','Coco'),P('aguacate','🥑','Aguacate','Avocado','Avocat','Avocado','Abacate'),
+      ]},
+      verduras: { name: T('Verduras','Vegetables','Légumes','Verdure','Legumes'), emoji: '🥬', items: [
+        P('tomate','🍅','Tomates','Tomatoes','Tomates','Pomodori','Tomates'),P('lechuga','🥬','Lechuga','Lettuce','Laitue','Lattuga','Alface'),P('rucula','🌱','Rúcula','Arugula','Roquette','Rucola','Rúcula'),P('espinacas','🥬','Espinacas','Spinach','Épinards','Spinaci','Espinafres'),P('zanahoria','🥕','Zanahorias','Carrots','Carottes','Carote','Cenouras'),P('patata','🥔','Patatas','Potatoes','Pommes de terre','Patate','Batatas'),P('boniato','🍠','Boniato','Sweet potato','Patate douce','Patata dolce','Batata-doce'),P('cebolla','🧅','Cebollas','Onions','Oignons','Cipolle','Cebolas'),P('puerro','🌿','Puerro','Leek','Poireau','Porro','Alho-porro'),P('ajo','🧄','Ajos','Garlic','Ail','Aglio','Alho'),P('pimiento','🫑','Pimientos','Peppers','Poivrons','Peperoni','Pimentos'),P('pepino','🥒','Pepino','Cucumber','Concombre','Cetriolo','Pepino'),P('calabacin','🥒','Calabacín','Zucchini','Courgette','Zucchine','Curgete'),P('berenjena','🍆','Berenjena','Eggplant','Aubergine','Melanzana','Beringela'),P('calabaza','🎃','Calabaza','Pumpkin','Citrouille','Zucca','Abóbora'),P('brocoli','🥦','Brócoli','Broccoli','Brocoli','Broccoli','Brócolos'),P('coliflor','🥦','Coliflor','Cauliflower','Chou-fleur','Cavolfiore','Couve-flor'),P('maiz','🌽','Maíz','Corn','Maïs','Mais','Milho'),P('guisantes','🫛','Guisantes','Peas','Petits pois','Piselli','Ervilhas'),P('judias-verdes','🫘','Judías verdes','Green beans','Haricots verts','Fagiolini','Feijão-verde'),P('esparragos','🌿','Espárragos','Asparagus','Asperges','Asparagi','Espargos'),P('apio','🌿','Apio','Celery','Céleri','Sedano','Aipo'),P('remolacha','🌰','Remolacha','Beetroot','Betterave','Barbabietola','Beterraba'),P('rabano','🫒','Rábanos','Radishes','Radis','Ravanelli','Rabanetes'),P('champi','🍄','Champiñones','Mushrooms','Champignons','Funghi','Cogumelos'),
+      ]},
+      hierbas: { name: T('Hierbas','Herbs','Herbes','Erbe','Ervas'), emoji: '🌿', items: [
+        P('jengibre','🫚','Jengibre','Ginger','Gingembre','Zenzero','Gengibre'),P('perejil','🌿','Perejil','Parsley','Persil','Prezzemolo','Salsa'),P('cilantro','🌿','Cilantro','Cilantro','Coriandre','Coriandolo','Coentros'),P('menta','🌿','Menta','Mint','Menthe','Menta','Hortelã'),P('albahaca','🌿','Albahaca','Basil','Basilic','Basilico','Manjericão'),
+      ]}
+    }
+  },
+  carnes: { name: T('Carnes y pescados','Meat & fish','Viandes & poissons','Carne e pesce','Carnes e peixes'), emoji: '🥩', gradient: 'from-rose-200 via-pink-100 to-red-100', gradientDark: 'from-rose-600/25 via-pink-600/20 to-red-600/25',
+    subcategories: {
+      aves: { name: T('Aves','Poultry','Volaille','Pollame','Aves'), emoji: '🍗', items: [
+        P('pollo','🍗','Pollo entero','Whole chicken','Poulet entier','Pollo intero','Frango inteiro'),P('pechuga-pollo','🍗','Pechuga pollo','Chicken breast','Blanc de poulet','Petto di pollo','Peito de frango'),P('muslos-pollo','🍗','Muslos pollo','Chicken thighs','Cuisses de poulet','Cosce di pollo','Coxas de frango'),P('alitas','🍗','Alitas','Wings','Ailes','Alette','Asas'),P('pavo','🦃','Pavo','Turkey','Dinde','Tacchino','Peru'),P('pechuga-pavo','🥩','Pechuga pavo','Turkey breast','Blanc de dinde','Petto di tacchino','Peito de peru'),
+      ]},
+      carnes_rojas: { name: T('Carnes rojas','Red meat','Viandes rouges','Carni rosse','Carnes vermelhas'), emoji: '🥩', items: [
+        P('ternera','🥩','Ternera','Beef','Bœuf','Manzo','Vaca'),P('filetes','🥩','Filetes','Steaks','Steaks','Bistecche','Bifes'),P('carne-picada','🥩','Carne picada','Ground meat','Viande hachée','Macinato','Carne picada'),P('cerdo','🐖','Cerdo','Pork','Porc','Maiale','Porco'),P('lomo','🥩','Lomo','Loin','Longe','Lombo','Lombo'),P('costillas','🍖','Costillas','Ribs','Côtes','Costole','Costelas'),P('cordero','🐑','Cordero','Lamb','Agneau','Agnello','Borrego'),P('conejo','🐰','Conejo','Rabbit','Lapin','Coniglio','Coelho'),
+      ]},
+      embutidos: { name: T('Embutidos','Cold cuts','Charcuterie','Salumi','Enchidos'), emoji: '🌭', items: [
+        P('jamon','🍖','Jamón serrano','Cured ham','Jambon cru','Prosciutto crudo','Presunto'),P('jamon-cocido','🥓','Jamón cocido','Cooked ham','Jambon cuit','Prosciutto cotto','Fiambre'),P('bacon','🥓','Bacon','Bacon','Bacon','Pancetta','Bacon'),P('chorizo','🌭','Chorizo','Chorizo','Chorizo','Chorizo','Chouriço'),P('salchichon','🥓','Salchichón','Salami','Saucisson','Salame','Salame'),P('salchichas','🌭','Salchichas','Sausages','Saucisses','Salsicce','Salsichas'),P('hamburguesa','🍔','Hamburguesas','Burgers','Burgers','Hamburger','Hambúrgueres'),P('albondigas','🍱','Albóndigas','Meatballs','Boulettes','Polpette','Almôndegas'),
+      ]},
+      pescados: { name: T('Pescados','Fish','Poissons','Pesce','Peixes'), emoji: '🐟', items: [
+        P('salmon','🐟','Salmón','Salmon','Saumon','Salmone','Salmão'),P('merluza','🐟','Merluza','Hake','Merlu','Nasello','Pescada'),P('bacalao','🐟','Bacalao','Cod','Cabillaud','Merluzzo','Bacalhau'),P('dorada','🐟','Dorada','Sea bream','Daurade','Orata','Dourada'),P('lubina','🐟','Lubina','Sea bass','Bar','Spigola','Robalo'),P('atun','🐠','Atún fresco','Fresh tuna','Thon frais','Tonno fresco','Atum fresco'),P('sardinas','🐟','Sardinas','Sardines','Sardines','Sardine','Sardinhas'),P('boquerones','🐟','Boquerones','Anchovies','Anchois','Acciughe','Anchovas'),
+      ]},
+      mariscos: { name: T('Mariscos','Shellfish','Fruits de mer','Frutti di mare','Marisco'), emoji: '🦐', items: [
+        P('gambas','🦐','Gambas','Shrimp','Crevettes','Gamberi','Camarão'),P('langostinos','🦐','Langostinos','Prawns','Gambas','Gamberoni','Lagostim'),P('calamares','🦑','Calamares','Squid','Calamars','Calamari','Lulas'),P('pulpo','🐙','Pulpo','Octopus','Poulpe','Polpo','Polvo'),P('mejillones','🦪','Mejillones','Mussels','Moules','Cozze','Mexilhões'),P('almejas','🐚','Almejas','Clams','Palourdes','Vongole','Amêijoas'),P('berberechos','🐚','Berberechos','Cockles','Coques','Cuori','Berbigão'),
+      ]}
+    }
+  },
+  lacteos: { name: T('Lácteos y huevos','Dairy & eggs','Laitiers & œufs','Latticini e uova','Lacticínios e ovos'), emoji: '🥛', gradient: 'from-blue-100 via-sky-100 to-cyan-100', gradientDark: 'from-blue-600/25 via-sky-600/20 to-cyan-600/25',
+    subcategories: {
+      leches: { name: T('Leches','Milk','Laits','Latti','Leites'), emoji: '🥛', items: [
+        P('leche','🥛','Leche entera','Whole milk','Lait entier','Latte intero','Leite gordo'),P('leche-desnatada','🥛','Leche desnatada','Skimmed milk','Lait écrémé','Latte scremato','Leite magro'),P('leche-semi','🥛','Leche semi','Semi-skimmed','Lait demi-écrémé','Latte parz. scremato','Leite meio-gordo'),P('leche-vegetal','🥛','Leche vegetal','Plant milk','Lait végétal','Latte vegetale','Leite vegetal'),P('leche-condensada','🥛','Leche condensada','Condensed milk','Lait concentré','Latte condensato','Leite condensado'),
+      ]},
+      quesos: { name: T('Quesos','Cheese','Fromages','Formaggi','Queijos'), emoji: '🧀', items: [
+        P('queso','🧀','Queso curado','Aged cheese','Fromage affiné','Formaggio stagionato','Queijo curado'),P('queso-fresco','🧀','Queso fresco','Fresh cheese','Fromage frais','Formaggio fresco','Queijo fresco'),P('queso-rallado','🧀','Queso rallado','Grated cheese','Fromage râpé','Formaggio grattugiato','Queijo ralado'),P('mozzarella','🧀','Mozzarella','Mozzarella','Mozzarella','Mozzarella','Mozzarella'),P('queso-cabra','🧀','Queso de cabra','Goat cheese','Fromage de chèvre','Formaggio di capra','Queijo de cabra'),P('quesitos','🧀','Quesitos','Cheese spread','Fromage à tartiner','Formaggini','Queijo creme'),P('parmesano','🧀','Parmesano','Parmesan','Parmesan','Parmigiano','Parmesão'),P('gouda','🧀','Gouda','Gouda','Gouda','Gouda','Gouda'),P('cheddar','🧀','Cheddar','Cheddar','Cheddar','Cheddar','Cheddar'),P('feta','🧀','Feta','Feta','Feta','Feta','Feta'),P('brie','🧀','Brie','Brie','Brie','Brie','Brie'),
+      ]},
+      yogures: { name: T('Yogures','Yogurts','Yaourts','Yogurt','Iogurtes'), emoji: '🍦', items: [
+        P('yogur','🍦','Yogur natural','Natural yogurt','Yaourt nature','Yogurt naturale','Iogurte natural'),P('yogur-sabores','🍦','Yogur sabores','Flavored yogurt','Yaourt aromatisé','Yogurt ai gusti','Iogurte aromas'),P('yogur-griego','🥣','Yogur griego','Greek yogurt','Yaourt grec','Yogurt greco','Iogurte grego'),P('kefir','🥛','Kéfir','Kefir','Kéfir','Kefir','Kefir'),P('requeson','🧀','Requesón','Cottage cheese','Fromage blanc','Ricotta','Requeijão'),P('cuajada','🥣','Cuajada','Curds','Caillé','Cagliata','Coalhada'),
+      ]},
+      mantequillas: { name: T('Mantequillas','Butters','Beurres','Burri','Manteigas'), emoji: '🧈', items: [
+        P('mantequilla','🧈','Mantequilla','Butter','Beurre','Burro','Manteiga'),P('margarina','🧈','Margarina','Margarine','Margarine','Margarina','Margarina'),P('nata','🍶','Nata','Cream','Crème','Panna','Natas'),P('nata-montar','🍶','Nata para montar','Whipping cream','Crème à fouetter','Panna da montare','Natas para bater'),
+      ]},
+      otros_lac: { name: T('Otros','Others','Autres','Altri','Outros'), emoji: '🥚', items: [
+        P('huevos','🥚','Huevos','Eggs','Œufs','Uova','Ovos'),P('batido','🥤','Batidos','Milkshakes','Milkshakes','Frullati','Batidos'),
+      ]}
+    }
+  },
+  panaderia: { name: T('Panadería y cereales','Bakery & cereals','Boulangerie & céréales','Panetteria e cereali','Padaria e cereais'), emoji: '🍞', gradient: 'from-amber-100 via-yellow-100 to-orange-100', gradientDark: 'from-amber-600/25 via-yellow-600/20 to-orange-600/25',
+    subcategories: {
+      panes: { name: T('Panes','Breads','Pains','Pane','Pães'), emoji: '🍞', items: [
+        P('pan','🍞','Pan','Bread','Pain','Pane','Pão'),P('pan-integral','🍞','Pan integral','Whole bread','Pain complet','Pane integrale','Pão integral'),P('pan-molde','🍞','Pan de molde','Sliced bread','Pain de mie','Pancarrè','Pão de forma'),P('baguette','🥖','Baguette','Baguette','Baguette','Baguette','Baguete'),P('panecillos','🥖','Panecillos','Rolls','Petits pains','Panini','Pãezinhos'),P('pan-burger','🍔','Pan hamburguesa','Burger buns','Pains burger','Pane burger','Pão hambúrguer'),P('pan-perrito','🌭','Pan perrito','Hot dog buns','Pains hot-dog','Pane hot-dog','Pão cachorro'),P('tostadas','🍞','Tostadas','Toast','Toasts','Toast','Tostas'),P('biscotes','🍞','Biscotes','Rusks','Biscottes','Fette biscottate','Tostas duras'),P('picos','🥖','Picos','Bread sticks','Gressins','Grissini','Palitos de pão'),
+      ]},
+      bolleria: { name: T('Bollería','Pastries','Viennoiseries','Pasticceria','Pastelaria'), emoji: '🥐', items: [
+        P('croissant','🥐','Croissants','Croissants','Croissants','Croissant','Croissants'),P('magdalenas','🧁','Magdalenas','Muffins','Madeleines','Madeleine','Queques'),P('bizcocho','🍰','Bizcocho','Sponge cake','Génoise','Pan di spagna','Bolo'),P('palmeras','🥐','Palmeras','Palmiers','Palmiers','Ventagli','Palmiers'),P('ensaimada','🥐','Ensaimadas','Ensaimadas','Ensaimadas','Ensaimade','Ensaimadas'),P('napolitanas','🥐','Napolitanas','Pain choco','Pains au chocolat','Napoletane','Napolitanas'),
+      ]},
+      cereales: { name: T('Cereales','Cereals','Céréales','Cereali','Cereais'), emoji: '🥣', items: [
+        P('cereales','🥣','Cereales','Cereal','Céréales','Cereali','Cereais'),P('muesli','🥣','Muesli','Muesli','Muesli','Muesli','Muesli'),P('granola','🥣','Granola','Granola','Granola','Granola','Granola'),P('avena','🌾','Avena','Oats','Avoine','Avena','Aveia'),P('cornflakes','🌽','Cornflakes','Cornflakes','Cornflakes','Cornflakes','Cornflakes'),
+      ]}
+    }
+  },
+  despensa: { name: T('Despensa','Pantry','Garde-manger','Dispensa','Despensa'), emoji: '🥫', gradient: 'from-orange-100 via-amber-100 to-yellow-100', gradientDark: 'from-orange-600/25 via-amber-600/20 to-yellow-600/25',
+    subcategories: {
+      pasta_arroz: { name: T('Pasta y arroz','Pasta & rice','Pâtes & riz','Pasta e riso','Massa e arroz'), emoji: '🍝', items: [
+        P('pasta','🍝','Pasta','Pasta','Pâtes','Pasta','Massa'),P('macarrones','🍝','Macarrones','Macaroni','Macaronis','Maccheroni','Macarrão'),P('espaguetis','🍝','Espaguetis','Spaghetti','Spaghettis','Spaghetti','Esparguete'),P('lasana','🍝','Placas lasaña','Lasagna sheets','Pâtes lasagne','Sfoglie lasagna','Massa lasanha'),P('arroz','🍚','Arroz','Rice','Riz','Riso','Arroz'),P('arroz-integral','🍚','Arroz integral','Brown rice','Riz complet','Riso integrale','Arroz integral'),P('quinoa','🌾','Quinoa','Quinoa','Quinoa','Quinoa','Quinoa'),P('cous-cous','🌾','Cous cous','Couscous','Couscous','Cuscus','Cuscuz'),P('fideos','🍜','Fideos','Noodles','Nouilles','Spaghettini','Aletria'),
+      ]},
+      aceites: { name: T('Aceites','Oils','Huiles','Oli','Óleos'), emoji: '🫒', items: [
+        P('aceite','🫒','Aceite oliva','Olive oil',"Huile d'olive","Olio d'oliva",'Azeite'),P('aceite-girasol','🌻','Aceite girasol','Sunflower oil','Huile tournesol','Olio di girasole','Óleo girassol'),P('aceite-coco','🥥','Aceite coco','Coconut oil','Huile coco','Olio di cocco','Óleo coco'),P('vinagre','🍶','Vinagre','Vinegar','Vinaigre','Aceto','Vinagre'),P('vinagre-modena','🍶','Vinagre Módena','Balsamic vinegar','Vinaigre balsamique','Aceto balsamico','Vinagre balsâmico'),
+      ]},
+      especias: { name: T('Especias','Spices','Épices','Spezie','Especiarias'), emoji: '🧂', items: [
+        P('sal','🧂','Sal','Salt','Sel','Sale','Sal'),P('pimienta','🧂','Pimienta','Pepper','Poivre','Pepe','Pimenta'),P('oregano','🌿','Orégano','Oregano','Origan','Origano','Orégãos'),P('pimenton','🌶️','Pimentón','Paprika','Paprika','Paprica','Pimentão-doce'),P('comino','🌿','Comino','Cumin','Cumin','Cumino','Cominhos'),P('curry','🌶️','Curry','Curry','Curry','Curry','Caril'),P('azafran','🌼','Azafrán','Saffron','Safran','Zafferano','Açafrão'),P('caldo','🍲','Cubitos caldo','Stock cubes','Cubes bouillon','Dadi brodo','Cubos caldo'),
+      ]},
+      reposteria: { name: T('Repostería','Baking','Pâtisserie','Pasticceria','Pastelaria'), emoji: '🍰', items: [
+        P('azucar','🍬','Azúcar','Sugar','Sucre','Zucchero','Açúcar'),P('azucar-moreno','🍬','Azúcar moreno','Brown sugar','Cassonade','Zucchero di canna','Açúcar mascavado'),P('edulcorante','🍬','Edulcorante','Sweetener','Édulcorant','Dolcificante','Adoçante'),P('harina','🌾','Harina','Flour','Farine','Farina','Farinha'),P('levadura','🥖','Levadura','Yeast','Levure','Lievito','Fermento'),P('gelatina','🍮','Gelatina','Gelatin','Gélatine','Gelatina','Gelatina'),P('chocolate-postre','🍫','Choco postre','Baking choco','Choco pâtisserie','Cioccolato fondente','Chocolate culinária'),
+      ]},
+      salsas: { name: T('Salsas','Sauces','Sauces','Salse','Molhos'), emoji: '🥫', items: [
+        P('tomate-frito','🥫','Tomate frito','Tomato sauce','Sauce tomate','Sugo di pomodoro','Polpa de tomate'),P('tomate-triturado','🥫','Tomate triturado','Crushed tomatoes','Tomates concassées','Pomodori pelati','Tomate triturado'),P('salsa-soja','🍶','Salsa de soja','Soy sauce','Sauce soja','Salsa di soia','Molho de soja'),P('ketchup','🍅','Ketchup','Ketchup','Ketchup','Ketchup','Ketchup'),P('mayonesa','🥚','Mayonesa','Mayonnaise','Mayonnaise','Maionese','Maionese'),P('mostaza','🌭','Mostaza','Mustard','Moutarde','Senape','Mostarda'),P('pesto','🌿','Pesto','Pesto','Pesto','Pesto','Pesto'),P('salsa-barbacoa','🍖','Salsa barbacoa','Barbecue sauce','Sauce barbecue','Salsa barbecue','Molho barbecue'),
+      ]},
+      conservas: { name: T('Conservas','Canned','Conserves','Conserve','Conservas'), emoji: '🥫', items: [
+        P('atun-lata','🥫','Atún en lata','Canned tuna','Thon en boîte','Tonno in scatola','Atum em lata'),P('sardinas-lata','🥫','Sardinas lata','Canned sardines','Sardines boîte','Sardine in scatola','Sardinhas em lata'),P('mejillones-lata','🥫','Mejillones lata','Canned mussels','Moules boîte','Cozze in scatola','Mexilhões em lata'),P('aceitunas','🫒','Aceitunas','Olives','Olives','Olive','Azeitonas'),P('pepinillos','🥒','Pepinillos','Pickles','Cornichons','Cetriolini','Picles'),P('maiz-lata','🌽','Maíz en lata','Canned corn','Maïs boîte','Mais in scatola','Milho em lata'),P('esparragos-lata','🌿','Espárragos lata','Canned asparagus','Asperges boîte','Asparagi in scatola','Espargos em lata'),P('pina-lata','🍍','Piña en lata','Canned pineapple','Ananas boîte','Ananas in scatola','Ananás em lata'),
+      ]},
+      legumbres: { name: T('Legumbres','Legumes','Légumineuses','Legumi','Leguminosas'), emoji: '🫘', items: [
+        P('garbanzos','🫘','Garbanzos','Chickpeas','Pois chiches','Ceci','Grão-de-bico'),P('lentejas','🫘','Lentejas','Lentils','Lentilles','Lenticchie','Lentilhas'),P('alubias','🫘','Alubias','Beans','Haricots','Fagioli','Feijão'),P('judias','🫘','Judías','White beans','Haricots blancs','Cannellini','Feijão branco'),P('soja','🫘','Soja','Soy','Soja','Soia','Soja'),
+      ]},
+      cafe_te: { name: T('Café e infusiones','Coffee & tea','Café & thé','Caffè e tè','Café e chá'), emoji: '☕', items: [
+        P('cafe','☕','Café molido','Ground coffee','Café moulu','Caffè macinato','Café moído'),P('cafe-grano','☕','Café en grano','Coffee beans','Café en grain','Caffè in grani','Café em grão'),P('cafe-soluble','☕','Café soluble','Instant coffee','Café soluble','Caffè solubile','Café solúvel'),P('capsulas','☕','Cápsulas','Pods','Capsules','Capsule','Cápsulas'),P('te','🍵','Té','Tea','Thé','Tè','Chá'),P('infusiones','🍵','Infusiones','Herbal tea','Tisanes','Tisane','Infusões'),P('manzanilla','🌼','Manzanilla','Chamomile','Camomille','Camomilla','Camomila'),P('colacao','🥤','Cacao soluble','Cocoa drink','Cacao en poudre','Cacao solubile','Cacau solúvel'),
+      ]},
+      untables: { name: T('Untables','Spreads','Tartinables','Spalmabili','Cremes'), emoji: '🍯', items: [
+        P('mermelada','🍯','Mermelada','Jam','Confiture','Marmellata','Compota'),P('miel','🍯','Miel','Honey','Miel','Miele','Mel'),P('crema-cacao','🍫','Crema de cacao','Choco spread','Pâte choco','Crema cacao','Creme cacau'),P('crema-cacahuete','🥜','Crema cacahuete','Peanut butter','Beurre cacahuète','Burro arachidi','Manteiga amendoim'),
+      ]}
+    }
+  },
+  congelados: { name: T('Congelados','Frozen','Surgelés','Surgelati','Congelados'), emoji: '❄️', gradient: 'from-cyan-100 via-blue-100 to-indigo-100', gradientDark: 'from-cyan-500/25 via-blue-500/20 to-indigo-500/25',
+    subcategories: {
+      precocinados: { name: T('Pre-cocinados','Pre-cooked','Précuits','Precotti','Pré-cozinhados'), emoji: '🍕', items: [
+        P('pizza','🍕','Pizza','Pizza','Pizza','Pizza','Pizza'),P('lasana-cong','🍱','Lasaña','Lasagna','Lasagnes','Lasagna','Lasanha'),P('croquetas','🥟','Croquetas','Croquettes','Croquettes','Crocchette','Croquetes'),P('empanadillas','🥟','Empanadillas','Empanadas','Empanadas','Empanadas','Empadas'),P('nuggets','🍗','Nuggets','Nuggets','Nuggets','Nuggets','Nuggets'),P('varitas','🐟','Varitas pescado','Fish sticks','Bâtonnets poisson','Bastoncini pesce','Douradinhos'),P('pollo-empanado','🍗','Pollo empanado','Breaded chicken','Poulet pané','Pollo impanato','Frango panado'),
+      ]},
+      helados: { name: T('Helados','Ice cream','Glaces','Gelati','Gelados'), emoji: '🍨', items: [
+        P('helado','🍨','Helado tarrina','Ice cream tub','Glace pot','Vaschetta gelato','Gelado'),P('polos','🍦','Polos','Popsicles','Esquimaux','Ghiaccioli','Gelados pau'),P('cucuruchos','🍦','Cucuruchos','Cones','Cônes','Coni gelato','Cones'),P('hielo','🧊','Hielo','Ice','Glaçons','Ghiaccio','Gelo'),
+      ]},
+      verduras_pescado: { name: T('Verduras y pescado','Veggies & fish','Légumes & poisson','Verdure e pesce','Legumes e peixe'), emoji: '🥦', items: [
+        P('verdura-cong','🥦','Verduras congeladas','Frozen veggies','Légumes surgelés','Verdure surgelate','Legumes congelados'),P('menestra','🥕','Menestra','Mixed veggies','Macédoine','Minestrone','Jardineira'),P('guisantes-cong','🫛','Guisantes','Peas','Petits pois','Piselli','Ervilhas'),P('pescado-cong','🐟','Pescado congelado','Frozen fish','Poisson surgelé','Pesce surgelato','Peixe congelado'),P('marisco-cong','🦐','Marisco congelado','Frozen seafood','Fruits de mer surgelés','Frutti di mare surgelati','Marisco congelado'),P('patatas-cong','🍟','Patatas fritas','French fries','Frites','Patatine fritte','Batatas fritas'),
+      ]}
+    }
+  },
+  aseo: { name: T('Aseo personal','Personal care','Hygiène','Igiene personale','Higiene pessoal'), emoji: '🧴', gradient: 'from-purple-100 via-violet-100 to-fuchsia-100', gradientDark: 'from-purple-500/25 via-violet-500/20 to-fuchsia-500/25',
+    subcategories: {
+      cabello: { name: T('Cabello','Hair','Cheveux','Capelli','Cabelo'), emoji: '💇', items: [
+        P('champu','🧴','Champú','Shampoo','Shampoing','Shampoo','Champô'),P('acondicionador','🧴','Acondicionador','Conditioner','Après-shampoing','Balsamo','Amaciador'),P('mascarilla-pelo','🧴','Mascarilla pelo','Hair mask','Masque cheveux','Maschera capelli','Máscara cabelo'),P('tinte','🎨','Tinte','Hair dye','Coloration','Tintura','Tinta'),P('peine','💇','Peine','Comb','Peigne','Pettine','Pente'),
+      ]},
+      higiene: { name: T('Higiene','Hygiene','Hygiène','Igiene','Higiene'), emoji: '🧼', items: [
+        P('gel','🧼','Gel de ducha','Shower gel','Gel douche','Bagnoschiuma','Gel de banho'),P('jabon-manos','🧼','Jabón de manos','Hand soap','Savon mains','Sapone mani','Sabonete líquido'),P('esponja','🧽','Esponja','Sponge','Éponge','Spugna','Esponja'),P('desodorante','🧴','Desodorante','Deodorant','Déodorant','Deodorante','Desodorizante'),
+      ]},
+      bucal: { name: T('Bucal','Oral','Buccal','Orale','Oral'), emoji: '🪥', items: [
+        P('pasta-dientes','🪥','Pasta de dientes','Toothpaste','Dentifrice','Dentifricio','Pasta dentes'),P('cepillo','🪥','Cepillo dientes','Toothbrush','Brosse à dents','Spazzolino','Escova dentes'),P('enjuague','🧴','Enjuague bucal','Mouthwash','Bain de bouche','Collutorio','Elixir oral'),P('hilo-dental','🦷','Hilo dental','Dental floss','Fil dentaire','Filo dentale','Fio dental'),
+      ]},
+      cuidado: { name: T('Cuidado piel','Skin care','Soins','Cura pelle','Cuidado pele'), emoji: '🧴', items: [
+        P('crema-corporal','🧴','Crema corporal','Body lotion','Crème corps','Crema corpo','Creme corporal'),P('crema-facial','🧴','Crema facial','Face cream','Crème visage','Crema viso','Creme rosto'),P('crema-manos','🧴','Crema de manos','Hand cream','Crème mains','Crema mani','Creme mãos'),P('protector-solar','☀️','Protector solar','Sunscreen','Crème solaire','Crema solare','Protetor solar'),P('aftersun','🌞','Aftersun','After-sun','Après-soleil','Doposole','Pós-solar'),P('discos-desmaq','⚪','Discos desmaq.','Cotton pads','Cotons','Dischetti','Discos algodão'),P('algodon','☁️','Algodón','Cotton','Coton','Cotone','Algodão'),
+      ]},
+      perfumes: { name: T('Perfumes','Fragrances','Parfums','Profumi','Perfumes'), emoji: '💐', items: [
+        P('colonia','💐','Colonia','Cologne','Eau de cologne','Colonia','Colónia'),P('perfume','💐','Perfume','Perfume','Parfum','Profumo','Perfume'),
+      ]},
+      afeitado: { name: T('Afeitado','Shaving','Rasage','Rasatura','Barbear'), emoji: '🪒', items: [
+        P('maquinilla','🪒','Maquinilla','Razor','Rasoir','Rasoio','Lâmina'),P('cuchillas','🪒','Cuchillas','Blades','Lames','Lamette','Lâminas'),P('espuma-afeitar','🧴','Espuma afeitar','Shave foam','Mousse rasage','Schiuma barba','Espuma barbear'),P('aftershave','🧴','Aftershave','Aftershave','Après-rasage','Dopobarba','Pós-barba'),
+      ]},
+      higiene_intima: { name: T('Higiene íntima','Feminine care','Hygiène intime','Igiene intima','Higiene íntima'), emoji: '🩸', items: [
+        P('papel-higienico','🧻','Papel higiénico','Toilet paper','Papier toilette','Carta igienica','Papel higiénico'),P('compresas','🩸','Compresas','Pads','Serviettes','Assorbenti','Pensos'),P('tampones','🩸','Tampones','Tampons','Tampons','Tamponi','Tampões'),P('salvaslips','🩸','Salvaslips','Pantyliners','Protège-slips','Salvaslip','Pensos diários'),
+      ]},
+      bebes: { name: T('Bebés','Babies','Bébés','Bambini','Bebés'), emoji: '👶', items: [
+        P('panales','👶','Pañales','Diapers','Couches','Pannolini','Fraldas'),P('toallitas-bebe','🧻','Toallitas bebé','Baby wipes','Lingettes bébé','Salviette baby','Toalhitas bebé'),P('leche-bebe','🍼','Leche bebé','Baby formula','Lait bébé','Latte bambini','Leite bebé'),P('potitos','🍼','Potitos','Baby food','Petits pots','Omogeneizzati','Boiões bebé'),
+      ]},
+      otros_aseo: { name: T('Otros','Others','Autres','Altri','Outros'), emoji: '🩹', items: [
+        P('bastoncillos','🦻','Bastoncillos','Cotton swabs','Cotons-tiges','Cotton fioc','Cotonetes'),P('tiritas','🩹','Tiritas','Band-aids','Pansements','Cerotti','Pensos rápidos'),P('cortaunas','✂️','Cortaúñas','Nail clippers','Coupe-ongles','Tagliaunghie','Corta-unhas'),P('pinzas','🤏','Pinzas','Tweezers','Pinces','Pinzette','Pinças'),
+      ]}
+    }
+  },
+  limpieza: { name: T('Limpieza del hogar','Home cleaning','Entretien maison','Pulizia casa','Limpeza do lar'), emoji: '🧺', gradient: 'from-teal-100 via-emerald-100 to-green-100', gradientDark: 'from-teal-500/25 via-emerald-500/20 to-green-500/25',
+    subcategories: {
+      lavadora: { name: T('Lavadora','Laundry','Lessive','Bucato','Roupa'), emoji: '🧺', items: [
+        P('detergente','🧺','Detergente','Detergent','Lessive','Detersivo','Detergente'),P('suavizante','🌸','Suavizante','Softener','Adoucissant','Ammorbidente','Amaciador'),P('quitamanchas','🧴','Quitamanchas','Stain remover','Détachant','Smacchiatore','Tira-nódoas'),P('lejia-color','🧴','Lejía color','Color bleach','Javel couleur','Candeggina colorati','Lixívia cor'),
+      ]},
+      lavavajillas: { name: T('Lavavajillas','Dishwasher','Lave-vaisselle','Lavastoviglie','Loiça'), emoji: '🧽', items: [
+        P('lavavajillas','🧽','Lavavajillas mano','Dish soap','Liquide vaisselle','Detersivo piatti','Lava-loiça'),P('pastillas-lavavajillas','🧊','Pastillas','Tablets','Tablettes','Pastiglie','Pastilhas'),P('abrillantador','✨','Abrillantador','Rinse aid','Liquide rinçage','Brillantante','Abrilhantador'),P('sal-lavavajillas','🧂','Sal lavavajillas','Dishwasher salt','Sel lave-vaisselle','Sale lavastoviglie','Sal máquina'),
+      ]},
+      limpieza_fuerte: { name: T('Limpieza fuerte','Heavy duty','Nettoyage fort','Pulizia forte','Limpeza forte'), emoji: '🧴', items: [
+        P('lejia','🧴','Lejía','Bleach','Eau de Javel','Candeggina','Lixívia'),P('amoniaco','🧴','Amoniaco','Ammonia','Ammoniaque','Ammoniaca','Amoníaco'),P('desengrasante','🧴','Desengrasante','Degreaser','Dégraissant','Sgrassatore','Desengordurante'),P('wc','🚽','Limpiador WC','Toilet cleaner','Nettoyant WC','Detergente WC','Limpa-sanitas'),P('desatascador','🚰','Desatascador','Drain unblocker','Déboucheur','Sturalavandini','Desentupidor'),
+      ]},
+      superficies: { name: T('Superficies','Surfaces','Surfaces','Superfici','Superfícies'), emoji: '🪟', items: [
+        P('limpiacristales','🪟','Limpiacristales','Glass cleaner','Lave-vitres','Detergente vetri','Limpa-vidros'),P('friegasuelos','🧹','Friegasuelos','Floor cleaner','Nettoyant sols','Detergente pavimenti','Limpa-chão'),P('limpiamuebles','🪑','Limpiamuebles','Furniture cleaner','Nettoyant meubles','Detergente mobili','Limpa-móveis'),P('antical','🚿','Antical','Limescale remover','Anti-calcaire','Anticalcare','Anti-calcário'),
+      ]},
+      utensilios: { name: T('Utensilios','Tools','Ustensiles','Strumenti','Utensílios'), emoji: '🧹', items: [
+        P('bayeta','🧻','Bayetas','Cleaning cloths','Chiffons','Panni','Esfregões'),P('estropajo','🧽','Estropajos','Scourers','Éponges','Spugne abrasive','Esfregões metálicos'),P('fregona','🧹','Fregona','Mop','Serpillière','Mocio','Esfregona'),P('escoba','🧹','Escoba','Broom','Balai','Scopa','Vassoura'),P('recogedor','🧹','Recogedor','Dustpan','Pelle','Paletta','Pá do lixo'),P('guantes','🧤','Guantes','Gloves','Gants','Guanti','Luvas'),
+      ]},
+      papel: { name: T('Papel y bolsas','Paper & bags','Papier & sacs','Carta e sacchi','Papel e sacos'), emoji: '🧻', items: [
+        P('bolsas','🗑️','Bolsas basura','Trash bags','Sacs poubelle','Sacchi spazzatura','Sacos lixo'),P('papel-cocina','🧻','Papel cocina','Paper towels','Essuie-tout','Carta cucina','Papel cozinha'),P('servilletas','🧻','Servilletas','Napkins','Serviettes','Tovaglioli','Guardanapos'),P('toallitas','🧻','Toallitas','Wipes','Lingettes','Salviette','Toalhitas'),P('aluminio','✨','Papel aluminio','Aluminum foil','Papier alu','Carta alluminio','Papel alumínio'),P('film','📜','Papel film','Plastic wrap','Film alimentaire','Pellicola','Película aderente'),P('horno-papel','📜','Papel de horno','Baking paper','Papier cuisson','Carta forno','Papel forno'),P('bolsas-zip','📦','Bolsas zip','Zip bags','Sacs zip','Sacchetti zip','Sacos zip'),
+      ]},
+      hogar: { name: T('Hogar','Home','Maison','Casa','Lar'), emoji: '🕯️', items: [
+        P('ambientador','🌸','Ambientador','Air freshener','Désodorisant','Deodorante ambiente','Ambientador'),P('insecticida','🦟','Insecticida','Insecticide','Insecticide','Insetticida','Inseticida'),P('velas','🕯️','Velas','Candles','Bougies','Candele','Velas'),P('pilas','🔋','Pilas','Batteries','Piles','Batterie','Pilhas'),P('bombillas','💡','Bombillas','Light bulbs','Ampoules','Lampadine','Lâmpadas'),P('cerillas','🔥','Cerillas','Matches','Allumettes','Fiammiferi','Fósforos'),
+      ]}
+    }
+  },
+  bebidas: { name: T('Bebidas','Drinks','Boissons','Bevande','Bebidas'), emoji: '🍷', gradient: 'from-pink-100 via-rose-100 to-red-100', gradientDark: 'from-pink-500/25 via-rose-500/20 to-red-500/25',
+    subcategories: {
+      aguas: { name: T('Aguas','Water','Eaux','Acque','Águas'), emoji: '💧', items: [
+        P('agua','💧','Agua','Water','Eau','Acqua','Água'),P('agua-gas','💧','Agua con gas','Sparkling water','Eau gazeuse','Acqua frizzante','Água gás'),P('agua-saborizada','🍋','Agua sabores','Flavored water','Eau aromatisée','Acqua aromatizzata','Água aromas'),
+      ]},
+      refrescos: { name: T('Refrescos','Soft drinks','Sodas','Bibite','Refrigerantes'), emoji: '🥤', items: [
+        P('cocacola','🥤','Cola','Cola','Cola','Cola','Cola'),P('cocacola-zero','🥤','Cola zero','Cola zero','Cola zéro','Cola zero','Cola zero'),P('naranjada','🍊','Naranjada','Orange soda','Orangeade','Aranciata','Sumo laranja'),P('limonada','🍋','Limonada','Lemonade','Limonade','Limonata','Limonada'),P('tonica','🥤','Tónica','Tonic','Tonic','Tonica','Tónica'),P('energetica','⚡','Energética','Energy drink','Boisson énergie','Energy drink','Energética'),P('isotonica','🥤','Isotónica','Sports drink','Boisson sport','Bevanda sportiva','Isotónica'),
+      ]},
+      zumos: { name: T('Zumos','Juices','Jus','Succhi','Sumos'), emoji: '🧃', items: [
+        P('zumo','🧃','Zumo naranja','Orange juice','Jus orange','Succo arancia','Sumo laranja'),P('zumo-pina','🧃','Zumo piña','Pineapple juice','Jus ananas','Succo ananas','Sumo ananás'),P('zumo-multifruta','🧃','Multifruta','Multifruit','Multifruits','Multifrutta','Multifrutos'),P('zumo-melocoton','🧃','Zumo melocotón','Peach juice','Jus pêche','Succo pesca','Sumo pêssego'),P('horchata','🥛','Horchata','Horchata','Orgeat','Orzata','Orchata'),
+      ]},
+      cervezas: { name: T('Cervezas','Beers','Bières','Birre','Cervejas'), emoji: '🍺', items: [
+        P('cerveza','🍺','Cerveza','Beer','Bière','Birra','Cerveja'),P('cerveza-sin','🍺','Cerveza sin','Non-alcoholic beer','Bière sans alcool','Birra analcolica','Cerveja sem álcool'),P('cerveza-tostada','🍺','Cerveza tostada','Dark beer','Bière brune','Birra scura','Cerveja preta'),P('sidra','🍾','Sidra','Cider','Cidre','Sidro','Sidra'),
+      ]},
+      vinos: { name: T('Vinos','Wines','Vins','Vini','Vinhos'), emoji: '🍷', items: [
+        P('vino-tinto','🍷','Vino tinto','Red wine','Vin rouge','Vino rosso','Vinho tinto'),P('vino-blanco','🥂','Vino blanco','White wine','Vin blanc','Vino bianco','Vinho branco'),P('vino-rosado','🍷','Vino rosado','Rosé wine','Vin rosé','Vino rosato','Vinho rosé'),P('cava','🍾','Cava','Cava','Cava','Cava','Cava'),P('champagne','🍾','Champagne','Champagne','Champagne','Champagne','Champanhe'),
+      ]},
+      licores: { name: T('Licores','Spirits','Spiritueux','Liquori','Licores'), emoji: '🥃', items: [
+        P('vermut','🍸','Vermut','Vermouth','Vermouth','Vermut','Vermute'),P('ginebra','🍸','Ginebra','Gin','Gin','Gin','Gin'),P('ron','🥃','Ron','Rum','Rhum','Rum','Rum'),P('whisky','🥃','Whisky','Whiskey','Whisky','Whisky','Whisky'),P('vodka','🍸','Vodka','Vodka','Vodka','Vodka','Vodka'),P('tequila','🥃','Tequila','Tequila','Tequila','Tequila','Tequila'),
+      ]}
+    }
+  },
+  snacks: { name: T('Snacks y dulces','Snacks & sweets','Snacks & sucreries','Snack e dolci','Snacks e doces'), emoji: '🍪', gradient: 'from-yellow-100 via-amber-100 to-orange-100', gradientDark: 'from-yellow-500/25 via-amber-500/20 to-orange-500/25',
+    subcategories: {
+      chocolate: { name: T('Chocolate','Chocolate','Chocolat','Cioccolato','Chocolate'), emoji: '🍫', items: [
+        P('chocolate','🍫','Tableta chocolate','Choco bar','Tablette choco','Tavoletta cioccolato','Tablete chocolate'),P('chocolatina','🍫','Chocolatinas','Choco bars','Barres choco','Barrette choco','Barras choco'),P('bombones','🍬','Bombones','Bonbons','Bonbons','Cioccolatini','Bombons'),P('turron','🍯','Turrón','Nougat','Touron','Torrone','Nogado'),P('kinder','🥚','Huevo Kinder','Kinder egg','Œuf Kinder','Ovetto Kinder','Ovo Kinder'),
+      ]},
+      galletas: { name: T('Galletas','Cookies','Biscuits','Biscotti','Bolachas'), emoji: '🍪', items: [
+        P('galletas','🍪','Galletas','Cookies','Biscuits','Biscotti','Bolachas'),P('maria','🍪','Galletas María','Plain biscuits','Petits-beurre','Biscotti Maria','Bolachas Maria'),P('oreo','🍪','Galletas choco','Choco cookies','Biscuits choco','Biscotti al cioccolato','Bolachas choco'),P('digestive','🍪','Digestive','Digestive','Digestive','Digestive','Digestivas'),P('principe','🍪','Príncipe','Sandwich cookies','Prince','Frollini','Príncipe'),
+      ]},
+      bolleria_dulce: { name: T('Bollería dulce','Sweet pastries','Pâtisseries','Dolci','Doces'), emoji: '🍩', items: [
+        P('donuts','🍩','Donuts','Donuts','Donuts','Ciambelle','Donuts'),P('barritas','🍫','Barritas','Bars','Barres','Barrette','Barras'),P('brownie','🍫','Brownies','Brownies','Brownies','Brownie','Brownies'),P('tarta','🍰','Tartas','Cakes','Gâteaux','Torte','Bolos'),
+      ]},
+      salados: { name: T('Salados','Savory','Salés','Salati','Salgados'), emoji: '🍿', items: [
+        P('patatas','🥔','Patatas fritas','Chips','Chips','Patatine','Batatas fritas'),P('gusanitos','🌽','Gusanitos','Corn snacks','Gusanitos','Gusanitos','Gusanitos'),P('doritos','🌽','Nachos','Nachos','Nachos','Nachos','Nachos'),P('palomitas','🍿','Palomitas','Popcorn','Pop-corn','Popcorn','Pipocas'),P('pretzels','🥨','Pretzels','Pretzels','Bretzels','Pretzel','Pretzels'),P('kikos','🌽','Kikos','Roasted corn','Maïs grillé','Mais tostato','Milho torrado'),P('pan-tomate','🥖','Picos','Bread sticks','Gressins','Grissini','Palitos pão'),
+      ]},
+      frutos_secos: { name: T('Frutos secos','Nuts','Fruits secs','Frutta secca','Frutos secos'), emoji: '🥜', items: [
+        P('frutos-secos','🥜','Mix frutos secos','Nut mix','Mélange noix','Mix frutta secca','Mix frutos secos'),P('almendras','🌰','Almendras','Almonds','Amandes','Mandorle','Amêndoas'),P('pipas','🌻','Pipas','Sunflower seeds','Graines tournesol','Semi girasole','Sementes girassol'),P('cacahuetes','🥜','Cacahuetes','Peanuts','Cacahuètes','Arachidi','Amendoim'),P('nueces','🌰','Nueces','Walnuts','Noix','Noci','Nozes'),P('pasas','🍇','Pasas','Raisins','Raisins secs','Uvetta','Passas'),
+      ]},
+      caramelos: { name: T('Caramelos','Candies','Bonbons','Caramelle','Rebuçados'), emoji: '🍬', items: [
+        P('caramelos','🍬','Caramelos','Candies','Bonbons','Caramelle','Rebuçados'),P('gominolas','🐻','Gominolas','Gummies','Bonbons gélifiés','Gommose','Gomas'),P('chicles','🍬','Chicles','Gum','Chewing-gum','Gomme','Pastilhas elásticas'),P('regaliz','🍭','Regaliz','Licorice','Réglisse','Liquirizia','Alcaçuz'),P('piruletas','🍭','Piruletas','Lollipops','Sucettes','Lecca-lecca','Chupa-chupas'),
+      ]}
+    }
+  },
+};
+
+// ========== ICONOS ==========
 const Icon = ({ d, size = 20, ...props }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>{d}</svg>
 );
@@ -260,22 +302,21 @@ const ShoppingCart = (p) => <Icon {...p} d={<><circle cx="8" cy="21" r="1"/><cir
 const Check = (p) => <Icon {...p} d={<polyline points="20 6 9 17 4 12"/>} />;
 const Trash2 = (p) => <Icon {...p} d={<><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></>} />;
 const Plus = (p) => <Icon {...p} d={<><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>} />;
-const Sparkles = (p) => <Icon {...p} d={<><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></>} />;
+const Sparkles = (p) => <Icon {...p} d={<><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></>} />;
 const Sun = (p) => <Icon {...p} d={<><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></>} />;
 const Moon = (p) => <Icon {...p} d={<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>} />;
+const Settings = (p) => <Icon {...p} d={<><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></>} />;
+const Search = (p) => <Icon {...p} d={<><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></>} />;
+const X = (p) => <Icon {...p} d={<><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>} />;
+const Star = (p) => <Icon {...p} d={<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>} />;
+const Globe = (p) => <Icon {...p} d={<><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></>} />;
 
 const Logo = ({ size = 48 }) => (
   <div className="relative" style={{ width: size, height: size }}>
     <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-md">
       <defs>
-        <radialGradient id="aguacate-skin" cx="50%" cy="40%">
-          <stop offset="0%" stopColor="#86efac" />
-          <stop offset="100%" stopColor="#4ade80" />
-        </radialGradient>
-        <radialGradient id="aguacate-flesh" cx="50%" cy="50%">
-          <stop offset="0%" stopColor="#fef9c3" />
-          <stop offset="100%" stopColor="#bef264" />
-        </radialGradient>
+        <radialGradient id="aguacate-skin" cx="50%" cy="40%"><stop offset="0%" stopColor="#86efac" /><stop offset="100%" stopColor="#4ade80" /></radialGradient>
+        <radialGradient id="aguacate-flesh" cx="50%" cy="50%"><stop offset="0%" stopColor="#fef9c3" /><stop offset="100%" stopColor="#bef264" /></radialGradient>
       </defs>
       <ellipse cx="50" cy="55" rx="32" ry="40" fill="url(#aguacate-skin)" />
       <ellipse cx="50" cy="55" rx="24" ry="32" fill="url(#aguacate-flesh)" />
@@ -285,7 +326,7 @@ const Logo = ({ size = 48 }) => (
   </div>
 );
 
-function LaChopi() {
+function MerKavo() {
   const [selected, setSelected] = useState(() => { try { return JSON.parse(safeStorage.get('selected') || '{}'); } catch { return {}; } });
   const [purchased, setPurchased] = useState(() => { try { return JSON.parse(safeStorage.get('purchased') || '{}'); } catch { return {}; } });
   const [activeCategory, setActiveCategory] = useState('frutas');
@@ -293,14 +334,53 @@ function LaChopi() {
   const [view, setView] = useState('catalog');
   const [animating, setAnimating] = useState(null);
   const [dark, setDark] = useState(() => { try { return JSON.parse(safeStorage.get('dark') || 'false'); } catch { return false; } });
+  const [language, setLanguage] = useState(() => { try { return JSON.parse(safeStorage.get('language') || '"es"'); } catch { return 'es'; } });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [customProducts, setCustomProducts] = useState(() => { try { return JSON.parse(safeStorage.get('customProducts') || '[]'); } catch { return []; } });
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newEmoji, setNewEmoji] = useState('⭐');
 
   useEffect(() => { safeStorage.set('selected', JSON.stringify(selected)); }, [selected]);
   useEffect(() => { safeStorage.set('purchased', JSON.stringify(purchased)); }, [purchased]);
   useEffect(() => { safeStorage.set('dark', JSON.stringify(dark)); }, [dark]);
+  useEffect(() => { safeStorage.set('language', JSON.stringify(language)); }, [language]);
+  useEffect(() => { safeStorage.set('customProducts', JSON.stringify(customProducts)); }, [customProducts]);
+
+  const t = (key) => UI[key]?.[language] || UI[key]?.es || key;
+  const getName = (obj) => typeof obj === 'string' ? obj : (obj?.[language] || obj?.es || '');
+
+  const allCategories = useMemo(() => {
+    const customCat = {
+      name: UI.myProducts, emoji: '⭐',
+      gradient: 'from-yellow-100 via-amber-100 to-orange-100',
+      gradientDark: 'from-yellow-500/25 via-amber-500/20 to-orange-500/25',
+      isCustom: true,
+      subcategories: { personal: { name: UI.myProducts, emoji: '⭐', items: customProducts } }
+    };
+    return { ...CATEGORIES, mis_productos: customCat };
+  }, [customProducts]);
+
+  const allItems = useMemo(() => {
+    const items = [];
+    Object.entries(allCategories).forEach(([catKey, cat]) => {
+      Object.entries(cat.subcategories).forEach(([subKey, sub]) => {
+        sub.items.forEach(item => items.push({ ...item, catKey, subKey, cat, sub }));
+      });
+    });
+    return items;
+  }, [allCategories]);
+
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return null;
+    const q = searchQuery.toLowerCase().trim();
+    return allItems.filter(item => getName(item.name).toLowerCase().includes(q));
+  }, [searchQuery, allItems, language]);
 
   const changeCategory = (key) => {
     setActiveCategory(key);
-    setActiveSubcategory(Object.keys(CATEGORIES[key].subcategories)[0]);
+    setActiveSubcategory(Object.keys(allCategories[key].subcategories)[0]);
+    setSearchQuery('');
   };
 
   const toggleItem = (id) => {
@@ -315,19 +395,32 @@ function LaChopi() {
   };
   const clearList = () => { setSelected({}); setPurchased({}); };
 
+  const addCustomProduct = () => {
+    const name = newName.trim();
+    if (!name) return;
+    const id = `custom-${Date.now()}`;
+    setCustomProducts(p => [...p, { id, name, emoji: newEmoji || '⭐' }]);
+    setNewName(''); setNewEmoji('⭐'); setShowAddModal(false);
+  };
+
+  const deleteCustomProduct = (id) => {
+    setCustomProducts(p => p.filter(x => x.id !== id));
+    setSelected(p => { const n = {...p}; delete n[id]; return n; });
+    setPurchased(p => { const n = {...p}; delete n[id]; return n; });
+  };
+
   const totalSelected = Object.keys(selected).length;
   const totalPurchased = Object.keys(purchased).filter(id => selected[id]).length;
-
   const countCategorySelected = (cat) => Object.values(cat.subcategories).reduce((acc, sub) => acc + sub.items.filter(item => selected[item.id]).length, 0);
   const countSubSelected = (sub) => sub.items.filter(item => selected[item.id]).length;
 
-  const selectedItemsByCategory = Object.entries(CATEGORIES).map(([catKey, cat]) => {
+  const selectedItemsByCategory = Object.entries(allCategories).map(([catKey, cat]) => {
     const items = [];
     Object.values(cat.subcategories).forEach(sub => sub.items.forEach(item => { if (selected[item.id]) items.push(item); }));
     return { catKey, cat, items };
   }).filter(g => g.items.length > 0);
 
-  const currentCategory = CATEGORIES[activeCategory];
+  const currentCategory = allCategories[activeCategory];
   const currentSub = currentCategory.subcategories[activeSubcategory] || Object.values(currentCategory.subcategories)[0];
 
   const bgMain = dark ? 'bg-slate-950' : 'bg-gradient-to-br from-green-50 via-yellow-50 to-orange-50';
@@ -341,6 +434,22 @@ function LaChopi() {
   const headingText = dark ? 'text-slate-100' : 'text-gray-700';
   const subText = dark ? 'text-slate-400' : 'text-gray-500';
   const listItemBg = dark ? 'bg-slate-800/90' : 'bg-white/80';
+  const inputBg = dark ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500' : 'bg-white border-gray-200 text-gray-700 placeholder-gray-400';
+
+  const renderProduct = (item, options = {}) => {
+    const { showCategoryBadge = false, allowDelete = false } = options;
+    const isSelected = selected[item.id];
+    const itemName = getName(item.name);
+    return (
+      <button key={item.id} onClick={() => toggleItem(item.id)} className={`relative group p-4 rounded-2xl transition-all duration-200 border text-left ${isSelected ? `${itemSelectedBg} shadow-md scale-95` : `${itemBg} hover:shadow-sm hover:-translate-y-0.5`} ${animating === item.id ? 'pop' : ''}`}>
+        {isSelected && (<div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-sm"><Check size={12} className="text-white" strokeWidth={3} /></div>)}
+        {allowDelete && (<span onClick={(e) => { e.stopPropagation(); deleteCustomProduct(item.id); }} className={`absolute top-2 left-2 w-5 h-5 rounded-full ${dark ? 'bg-slate-900/80 text-rose-400' : 'bg-white/80 text-rose-400'} flex items-center justify-center shadow-sm hover:bg-rose-500 hover:text-white cursor-pointer transition-colors`}><X size={12} strokeWidth={3} /></span>)}
+        <div className="text-3xl mb-1">{item.emoji}</div>
+        <div className={`text-xs font-medium ${isSelected ? itemNameSelectedText : itemNameText}`}>{itemName}</div>
+        {showCategoryBadge && item.cat && (<div className={`text-[10px] mt-1 ${subText} flex items-center gap-1`}><span>{item.cat.emoji}</span><span>{getName(item.cat.name)}</span></div>)}
+      </button>
+    );
+  };
 
   return (
     <div className={`min-h-screen ${bgMain} pb-24 transition-colors duration-300 relative`}>
@@ -354,18 +463,19 @@ function LaChopi() {
           <div className="flex items-center gap-3 min-w-0">
             <Logo size={44} />
             <div className="min-w-0">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-green-400 via-emerald-400 to-lime-400 bg-clip-text text-transparent leading-none">LaChopi</h1>
-              <p className={`text-xs ${subText} mt-0.5 flex items-center gap-1`}><Sparkles size={10} /> Tu lista a un toque</p>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-green-400 via-emerald-400 to-lime-400 bg-clip-text text-transparent leading-none">merkavo</h1>
             </div>
           </div>
-          <div className="flex gap-2 items-center flex-shrink-0">
-            <button onClick={() => setDark(!dark)} className={`p-2 rounded-full transition-all ${dark ? 'bg-slate-800 text-amber-300 hover:bg-slate-700 border border-slate-700' : 'bg-white/60 text-slate-600 hover:bg-white border border-transparent'}`}>
-              {dark ? <Sun size={18} /> : <Moon size={18} />}
+          <div className="flex gap-1.5 items-center flex-shrink-0">
+            <button onClick={() => setView('catalog')} className={`p-2.5 rounded-full transition-all ${view === 'catalog' ? 'bg-gradient-to-r from-green-400 to-emerald-400 text-white shadow-md' : `${tabInactive} border`}`}>
+              <Search size={18} />
             </button>
-            <button onClick={() => setView('catalog')} className={`px-3 sm:px-4 py-2 rounded-full text-sm font-medium transition-all ${view === 'catalog' ? 'bg-gradient-to-r from-green-400 to-emerald-400 text-white shadow-md' : `${tabInactive} border`}`}>Catálogo</button>
-            <button onClick={() => setView('list')} className={`px-3 sm:px-4 py-2 rounded-full text-sm font-medium transition-all relative ${view === 'list' ? 'bg-gradient-to-r from-rose-400 to-pink-400 text-white shadow-md' : `${tabInactive} border`}`}>
-              Lista
-              {totalSelected > 0 && (<span className={`absolute -top-1 -right-1 ${view === 'list' ? 'bg-white text-rose-500' : 'bg-rose-400 text-white'} text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-sm`}>{totalSelected}</span>)}
+            <button onClick={() => setView('list')} className={`p-2.5 rounded-full transition-all relative ${view === 'list' ? 'bg-gradient-to-r from-rose-400 to-pink-400 text-white shadow-md' : `${tabInactive} border`}`}>
+              <ShoppingCart size={18} />
+              {totalSelected > 0 && (<span className={`absolute -top-1 -right-1 ${view === 'list' ? 'bg-white text-rose-500' : 'bg-rose-400 text-white'} text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-sm`}>{totalSelected}</span>)}
+            </button>
+            <button onClick={() => setView('settings')} className={`p-2.5 rounded-full transition-all ${view === 'settings' ? 'bg-gradient-to-r from-purple-400 to-violet-400 text-white shadow-md' : `${tabInactive} border`}`}>
+              <Settings size={18} />
             </button>
           </div>
         </div>
@@ -374,51 +484,91 @@ function LaChopi() {
       <main className="max-w-3xl mx-auto px-5 pt-6 relative z-10">
         {view === 'catalog' && (
           <div className="slide-up">
-            <div className="flex flex-wrap gap-2 mb-5">
-              {Object.entries(CATEGORIES).map(([key, cat]) => {
-                const count = countCategorySelected(cat);
-                const isActive = activeCategory === key;
-                const gradient = dark ? cat.gradientDark : cat.gradient;
-                return (
-                  <button key={key} onClick={() => changeCategory(key)} className={`relative px-3.5 py-2 rounded-2xl text-xs font-medium transition-all flex items-center gap-1.5 border ${isActive ? `bg-gradient-to-br ${gradient} ${dark ? 'text-slate-100 border-slate-600 shadow-lg shadow-black/20' : 'text-gray-800 border-white shadow-md'} scale-105` : tabInactive}`}>
-                    <span className="text-sm">{cat.emoji}</span>{cat.name}
-                    {count > 0 && (<span className="ml-1 bg-gradient-to-br from-green-400 to-emerald-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">{count}</span>)}
-                  </button>
-                );
-              })}
+            <div className={`relative mb-5 ${cardBg} backdrop-blur rounded-2xl border ${dark ? 'border-slate-700/60' : 'border-white/60'} shadow-sm`}>
+              <Search size={18} className={`absolute left-4 top-1/2 -translate-y-1/2 ${subText}`} />
+              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t('searchPlaceholder')} className={`w-full pl-11 pr-11 py-3 rounded-2xl bg-transparent ${dark ? 'text-slate-100 placeholder-slate-500' : 'text-gray-700 placeholder-gray-400'} outline-none text-sm`} />
+              {searchQuery && (<button onClick={() => setSearchQuery('')} className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full ${dark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-gray-100 text-gray-400'}`}><X size={16} /></button>)}
             </div>
 
-            <div className={`bg-gradient-to-br ${dark ? currentCategory.gradientDark : currentCategory.gradient} rounded-3xl p-5 shadow-sm border ${dark ? 'border-slate-700/60 shadow-lg shadow-black/30' : 'border-white/60'}`}>
-              <h2 className={`text-lg font-bold ${headingText} mb-4 flex items-center gap-2`}>
-                <span className="text-2xl">{currentCategory.emoji}</span>{currentCategory.name}
-              </h2>
-
-              <div className="flex flex-wrap gap-1.5 mb-5">
-                {Object.entries(currentCategory.subcategories).map(([subKey, sub]) => {
-                  const isActive = activeSubcategory === subKey;
-                  const subCount = countSubSelected(sub);
-                  return (
-                    <button key={subKey} onClick={() => setActiveSubcategory(subKey)} className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1 ${isActive ? (dark ? 'bg-slate-900/80 text-white shadow-md' : 'bg-white text-gray-800 shadow-md') : (dark ? 'bg-slate-900/40 text-slate-300 hover:bg-slate-900/60' : 'bg-white/50 text-gray-600 hover:bg-white/80')}`}>
-                      <span>{sub.emoji}</span>{sub.name}
-                      {subCount > 0 && (<span className="ml-0.5 bg-gradient-to-br from-green-400 to-emerald-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1">{subCount}</span>)}
-                    </button>
-                  );
-                })}
+            {filteredItems !== null ? (
+              <div className="fade-in">
+                {filteredItems.length === 0 ? (
+                  <div className={`text-center py-16 ${cardBg} rounded-3xl border ${dark ? 'border-slate-700/60' : 'border-white/60'}`}>
+                    <div className="text-5xl mb-3">🔍</div>
+                    <p className={`${headingText} font-medium`}>{t('noResults')}</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className={`text-xs ${subText} mb-3 px-1`}>{filteredItems.length} ✨</div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {filteredItems.map(item => renderProduct(item, { showCategoryBadge: true }))}
+                    </div>
+                  </>
+                )}
               </div>
+            ) : (
+              <>
+                <div className="flex flex-wrap gap-2 mb-5">
+                  {Object.entries(allCategories).map(([key, cat]) => {
+                    const count = countCategorySelected(cat);
+                    const isActive = activeCategory === key;
+                    const gradient = dark ? cat.gradientDark : cat.gradient;
+                    return (
+                      <button key={key} onClick={() => changeCategory(key)} className={`relative px-3.5 py-2 rounded-2xl text-xs font-medium transition-all flex items-center gap-1.5 border ${isActive ? `bg-gradient-to-br ${gradient} ${dark ? 'text-slate-100 border-slate-600 shadow-lg shadow-black/20' : 'text-gray-800 border-white shadow-md'} scale-105` : tabInactive}`}>
+                        <span className="text-sm">{cat.emoji}</span>{getName(cat.name)}
+                        {count > 0 && (<span className="ml-1 bg-gradient-to-br from-green-400 to-emerald-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">{count}</span>)}
+                      </button>
+                    );
+                  })}
+                </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 fade-in" key={activeSubcategory}>
-                {currentSub.items.map(item => {
-                  const isSelected = selected[item.id];
-                  return (
-                    <button key={item.id} onClick={() => toggleItem(item.id)} className={`relative group p-4 rounded-2xl transition-all duration-200 border ${isSelected ? `${itemSelectedBg} shadow-md scale-95` : `${itemBg} hover:shadow-sm hover:-translate-y-0.5`} ${animating === item.id ? 'pop' : ''}`}>
-                      {isSelected && (<div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-sm"><Check size={12} className="text-white" strokeWidth={3} /></div>)}
-                      <div className="text-3xl mb-1">{item.emoji}</div>
-                      <div className={`text-xs font-medium ${isSelected ? itemNameSelectedText : itemNameText}`}>{item.name}</div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+                <div className={`bg-gradient-to-br ${dark ? currentCategory.gradientDark : currentCategory.gradient} rounded-3xl p-5 shadow-sm border ${dark ? 'border-slate-700/60 shadow-lg shadow-black/30' : 'border-white/60'}`}>
+                  <h2 className={`text-lg font-bold ${headingText} mb-4 flex items-center gap-2`}>
+                    <span className="text-2xl">{currentCategory.emoji}</span>{getName(currentCategory.name)}
+                  </h2>
+
+                  {currentCategory.isCustom ? (
+                    <>
+                      {customProducts.length === 0 ? (
+                        <div className={`text-center py-12 ${dark ? 'bg-slate-900/40' : 'bg-white/40'} rounded-2xl`}>
+                          <div className="text-5xl mb-3">⭐</div>
+                          <p className={`${headingText} font-medium mb-1`}>{t('noCustom')}</p>
+                          <p className={`${subText} text-sm`}>{t('createFirst')}</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {customProducts.map(item => renderProduct(item, { allowDelete: true }))}
+                        </div>
+                      )}
+                      <div className="mt-4 flex justify-center">
+                        <button onClick={() => setShowAddModal(true)} className="px-5 py-3 bg-gradient-to-r from-amber-400 to-orange-400 text-white rounded-full font-medium shadow-md hover:shadow-lg transition-all flex items-center gap-2">
+                          <Plus size={18} /> {t('addProduct')}
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex flex-wrap gap-1.5 mb-5">
+                        {Object.entries(currentCategory.subcategories).map(([subKey, sub]) => {
+                          const isActive = activeSubcategory === subKey;
+                          const subCount = countSubSelected(sub);
+                          return (
+                            <button key={subKey} onClick={() => setActiveSubcategory(subKey)} className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1 ${isActive ? (dark ? 'bg-slate-900/80 text-white shadow-md' : 'bg-white text-gray-800 shadow-md') : (dark ? 'bg-slate-900/40 text-slate-300 hover:bg-slate-900/60' : 'bg-white/50 text-gray-600 hover:bg-white/80')}`}>
+                              <span>{sub.emoji}</span>{getName(sub.name)}
+                              {subCount > 0 && (<span className="ml-0.5 bg-gradient-to-br from-green-400 to-emerald-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1">{subCount}</span>)}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 fade-in" key={activeSubcategory}>
+                        {currentSub.items.map(item => renderProduct(item))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -429,10 +579,10 @@ function LaChopi() {
                 <div className={`inline-block p-6 rounded-3xl ${cardBg} mb-4 border ${dark ? 'border-slate-700/60' : 'border-white/60'}`}>
                   <ShoppingCart size={48} className={dark ? 'text-slate-600' : 'text-gray-300'} />
                 </div>
-                <h3 className={`text-xl font-bold ${headingText} mb-2`}>Tu lista está vacía</h3>
-                <p className={`${subText} text-sm mb-6`}>Añade productos desde el catálogo</p>
+                <h3 className={`text-xl font-bold ${headingText} mb-2`}>{t('emptyList')}</h3>
+                <p className={`${subText} text-sm mb-6`}>{t('emptyHint')}</p>
                 <button onClick={() => setView('catalog')} className="px-6 py-3 bg-gradient-to-r from-green-400 to-emerald-400 text-white rounded-full font-medium shadow-md hover:shadow-lg transition-all flex items-center gap-2 mx-auto">
-                  <Plus size={18} /> Empezar a añadir
+                  <Plus size={18} /> {t('startAdding')}
                 </button>
               </div>
             ) : (
@@ -441,11 +591,11 @@ function LaChopi() {
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <div className="text-3xl font-bold bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent">{totalSelected - totalPurchased}</div>
-                      <div className={`text-xs ${subText}`}>por comprar</div>
+                      <div className={`text-xs ${subText}`}>{t('toBuy')}</div>
                     </div>
                     <div className="text-right">
                       <div className="text-3xl font-bold text-emerald-400">{totalPurchased}</div>
-                      <div className={`text-xs ${subText}`}>en el carro</div>
+                      <div className={`text-xs ${subText}`}>{t('inCart')}</div>
                     </div>
                   </div>
                   <div className={`w-full h-2 ${dark ? 'bg-slate-700' : 'bg-gray-100'} rounded-full overflow-hidden`}>
@@ -458,7 +608,7 @@ function LaChopi() {
                     <div key={catKey} className={`bg-gradient-to-br ${dark ? cat.gradientDark : cat.gradient} rounded-3xl p-4 border ${dark ? 'border-slate-700/60 shadow-lg shadow-black/20' : 'border-white/60'} shadow-sm fade-in`}>
                       <div className="flex items-center gap-2 mb-3 px-1">
                         <span className="text-xl">{cat.emoji}</span>
-                        <h3 className={`font-bold ${headingText} text-sm`}>{cat.name}</h3>
+                        <h3 className={`font-bold ${headingText} text-sm`}>{getName(cat.name)}</h3>
                         <span className={`text-xs ${subText} ${dark ? 'bg-slate-900/60' : 'bg-white/60'} px-2 py-0.5 rounded-full ml-auto`}>{items.length}</span>
                       </div>
                       <div className="space-y-2">
@@ -470,7 +620,7 @@ function LaChopi() {
                                 {isPurchased && <Check size={14} className="text-white" strokeWidth={3} />}
                               </button>
                               <span className="text-2xl">{item.emoji}</span>
-                              <span className={`flex-1 text-sm font-medium ${isPurchased ? `line-through ${dark ? 'text-slate-500' : 'text-gray-400'}` : (dark ? 'text-slate-100' : 'text-gray-700')}`}>{item.name}</span>
+                              <span className={`flex-1 text-sm font-medium ${isPurchased ? `line-through ${dark ? 'text-slate-500' : 'text-gray-400'}` : (dark ? 'text-slate-100' : 'text-gray-700')}`}>{getName(item.name)}</span>
                               <button onClick={() => removeFromList(item.id)} className={`${dark ? 'text-slate-500 hover:text-rose-400' : 'text-gray-300 hover:text-rose-400'} transition-colors p-1`}><Trash2 size={16} /></button>
                             </div>
                           );
@@ -482,19 +632,100 @@ function LaChopi() {
 
                 <div className="mt-6 flex justify-center">
                   <button onClick={clearList} className={`px-5 py-2.5 ${dark ? 'bg-slate-800/80 hover:bg-slate-800 border-rose-900/40 text-rose-400' : 'bg-white/60 hover:bg-white border-rose-100 text-rose-500'} text-sm font-medium rounded-full border transition-all flex items-center gap-2`}>
-                    <Trash2 size={14} /> Vaciar lista
+                    <Trash2 size={14} /> {t('clearList')}
                   </button>
                 </div>
               </>
             )}
           </div>
         )}
+
+        {view === 'settings' && (
+          <div className="slide-up space-y-5">
+            <div className={`${cardBg} backdrop-blur rounded-3xl p-5 border ${dark ? 'border-slate-700/60 shadow-lg shadow-black/20' : 'border-white/60'} shadow-sm`}>
+              <h3 className={`font-bold ${headingText} mb-4 flex items-center gap-2`}>
+                {dark ? <Moon size={18} /> : <Sun size={18} />} {t('appearance')}
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => setDark(false)} className={`p-4 rounded-2xl transition-all border-2 ${!dark ? 'bg-gradient-to-br from-yellow-100 to-orange-100 border-amber-400 shadow-md' : `${dark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'}`}`}>
+                  <Sun size={28} className={`mx-auto mb-2 ${!dark ? 'text-amber-500' : (dark ? 'text-slate-500' : 'text-gray-400')}`} />
+                  <div className={`text-sm font-medium ${!dark ? 'text-gray-800' : (dark ? 'text-slate-300' : 'text-gray-600')}`}>{t('lightMode')}</div>
+                </button>
+                <button onClick={() => setDark(true)} className={`p-4 rounded-2xl transition-all border-2 ${dark ? 'bg-gradient-to-br from-slate-800 to-slate-900 border-emerald-400 shadow-md' : 'bg-white border-gray-200'}`}>
+                  <Moon size={28} className={`mx-auto mb-2 ${dark ? 'text-emerald-400' : 'text-gray-400'}`} />
+                  <div className={`text-sm font-medium ${dark ? 'text-slate-200' : 'text-gray-600'}`}>{t('darkMode')}</div>
+                </button>
+              </div>
+            </div>
+
+            <div className={`${cardBg} backdrop-blur rounded-3xl p-5 border ${dark ? 'border-slate-700/60 shadow-lg shadow-black/20' : 'border-white/60'} shadow-sm`}>
+              <h3 className={`font-bold ${headingText} mb-4 flex items-center gap-2`}>
+                <Globe size={18} /> {t('language')}
+              </h3>
+              <div className="grid grid-cols-1 gap-2">
+                {LANGS.map(l => (
+                  <button key={l.code} onClick={() => setLanguage(l.code)} className={`flex items-center gap-3 p-3 rounded-2xl transition-all border-2 ${language === l.code ? (dark ? 'bg-slate-700 border-emerald-400' : 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300') : (dark ? 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800' : 'bg-white/50 border-transparent hover:bg-white')}`}>
+                    <span className="text-2xl">{l.flag}</span>
+                    <span className={`flex-1 text-left font-medium ${dark ? 'text-slate-200' : 'text-gray-700'}`}>{l.name}</span>
+                    {language === l.code && (<div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center"><Check size={14} className="text-white" strokeWidth={3} /></div>)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className={`${cardBg} backdrop-blur rounded-3xl p-6 border ${dark ? 'border-slate-700/60 shadow-lg shadow-black/20' : 'border-white/60'} shadow-sm text-center`}>
+              <Logo size={64} />
+              <h3 className={`font-bold ${headingText} mt-3 text-lg`}>merkavo</h3>
+              <p className={`${subText} text-sm mt-1`}>{t('tagline')}</p>
+              <div className={`mt-3 inline-block px-3 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase ${dark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-600'}`}>beta</div>
+              <p className={`${subText} text-xs mt-4`}>{t('createdBy')} <span className="font-semibold bg-gradient-to-r from-green-400 via-emerald-400 to-lime-400 bg-clip-text text-transparent">Fez&Fez</span></p>
+            </div>
+          </div>
+        )}
       </main>
 
-      {view === 'catalog' && totalSelected > 0 && (
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-5 bg-black/50 backdrop-blur-sm" onClick={() => setShowAddModal(false)}>
+          <div className={`modal-in w-full max-w-md ${dark ? 'bg-slate-900 border-slate-700' : 'bg-white border-white'} rounded-t-3xl sm:rounded-3xl border shadow-2xl p-6`} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className={`text-lg font-bold ${headingText} flex items-center gap-2`}>
+                <Star size={20} className="text-amber-400" /> {t('addProduct')}
+              </h3>
+              <button onClick={() => setShowAddModal(false)} className={`p-1.5 rounded-full ${dark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-gray-100 text-gray-500'}`}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className={`mb-5 p-5 rounded-2xl bg-gradient-to-br ${dark ? 'from-amber-500/20 to-orange-500/20' : 'from-amber-100 to-orange-100'} text-center`}>
+              <div className="text-5xl mb-2">{newEmoji || '⭐'}</div>
+              <div className={`font-medium ${headingText}`}>{newName || '...'}</div>
+            </div>
+
+            <label className={`block text-xs font-semibold ${subText} mb-2 uppercase tracking-wide`}>{t('productName')}</label>
+            <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} autoFocus className={`w-full px-4 py-3 rounded-2xl border-2 ${inputBg} outline-none focus:border-emerald-400 transition-colors mb-5`} placeholder="..." maxLength={30} />
+
+            <label className={`block text-xs font-semibold ${subText} mb-2 uppercase tracking-wide`}>{t('chooseEmoji')}</label>
+            <div className={`grid grid-cols-9 gap-1.5 mb-3 p-3 rounded-2xl ${dark ? 'bg-slate-800/50' : 'bg-gray-50'} max-h-40 overflow-y-auto`}>
+              {SUGGESTED_EMOJIS.map(em => (
+                <button key={em} onClick={() => setNewEmoji(em)} className={`text-2xl p-1 rounded-lg transition-all ${newEmoji === em ? (dark ? 'bg-slate-700 ring-2 ring-emerald-400' : 'bg-white ring-2 ring-green-400 shadow-sm') : (dark ? 'hover:bg-slate-700' : 'hover:bg-white')}`}>{em}</button>
+              ))}
+            </div>
+
+            <label className={`block text-xs font-semibold ${subText} mb-2 uppercase tracking-wide`}>{t('customEmoji')}</label>
+            <input type="text" value={newEmoji} onChange={(e) => setNewEmoji(e.target.value)} className={`w-full px-4 py-3 rounded-2xl border-2 ${inputBg} outline-none focus:border-emerald-400 transition-colors mb-5 text-center text-2xl`} maxLength={4} />
+
+            <div className="flex gap-3">
+              <button onClick={() => setShowAddModal(false)} className={`flex-1 py-3 rounded-2xl font-medium transition-all ${dark ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}>{t('cancel')}</button>
+              <button onClick={addCustomProduct} disabled={!newName.trim()} className="flex-1 py-3 rounded-2xl font-medium bg-gradient-to-r from-amber-400 to-orange-400 text-white shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">{t('save')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {view === 'catalog' && totalSelected > 0 && !searchQuery && (
         <button onClick={() => setView('list')} className="fixed bottom-6 right-6 bg-gradient-to-br from-rose-400 to-pink-500 text-white rounded-full shadow-xl hover:shadow-2xl transition-all hover:scale-105 flex items-center gap-2 px-5 py-3.5 z-30">
           <ShoppingCart size={20} />
-          <span className="font-semibold">Ver lista</span>
+          <span className="font-semibold">{t('viewList')}</span>
           <span className="bg-white text-rose-500 text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">{totalSelected}</span>
         </button>
       )}
@@ -502,10 +733,9 @@ function LaChopi() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<LaChopi />);
+ReactDOM.createRoot(document.getElementById('root')).render(<MerKavo />);
 </script>
 <script>
-  // Registro del Service Worker para funcionar offline
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));

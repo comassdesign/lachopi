@@ -1,4 +1,4 @@
-const CACHE = 'lachopi-v1';
+const CACHE = 'merkavo-v1';
 const ASSETS = [
   './',
   './index.html',
